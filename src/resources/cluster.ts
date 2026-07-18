@@ -50,6 +50,12 @@ export class Cluster extends KubeObject<CnpgCluster> {
   static apiVersion = 'postgresql.cnpg.io/v1';
   static isNamespaced = true;
 
+  // Returning the raw path (rather than the 'CnpgClusterDetail' route name registered in
+  // index.tsx) is deliberate: KubeObject.getDetailsLink() -> createRouteURL() falls back to a
+  // path-based route lookup and correctly generates the link, whereas the name-based lookup was
+  // observed to return an empty string here (breaking navigation) despite matching the
+  // registered route name. This mirrors the same workaround the official cert-manager plugin
+  // uses, at the cost of a harmless "[Deprecation] found by path instead of name" console warning.
   static get detailsRoute() {
     return '/cnpg/clusters/:namespace/:name';
   }

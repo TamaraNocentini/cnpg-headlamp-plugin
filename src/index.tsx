@@ -14,17 +14,6 @@
  * limitations under the License.
  */
 
-import { registerAppBarAction } from '@kinvolk/headlamp-plugin/lib';
-
-// Below are some imports you may want to use.
-//   See README.md for links to plugin development documentation.
-// import { Headlamp, K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
-// import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-// import { K8s } from '@kinvolk/headlamp-plugin/lib/K8s';
-// import { Typography } from '@mui/material';
-
-registerAppBarAction(<span>Hello</span>);
-
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
@@ -47,13 +36,19 @@ registerSidebarEntry({
 registerRoute({
   path: '/cnpg/clusters',
   sidebar: 'Clusters',
-  name: 'Clusters',
+  // Route "name" must be unique across Headlamp (built-in and plugins) — 'Cluster'/'cluster'
+  // collides with Headlamp's own multi-cluster context route, so these are prefixed.
+  name: 'CnpgClusters',
+  // Without this, this route's path can still prefix-match the (longer) detail route's path
+  // below, so this list keeps rendering instead of yielding to the detail route.
+  exact: true,
   component: () => <ClustersList />,
 });
 
 registerRoute({
   path: '/cnpg/clusters/:namespace/:name',
   sidebar: 'Clusters',
-  name: 'Cluster',
+  name: 'CnpgClusterDetail',
+  exact: true,
   component: () => <ClusterDetail />,
 });
