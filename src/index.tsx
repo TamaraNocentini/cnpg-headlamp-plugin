@@ -25,8 +25,35 @@ import { registerAppBarAction } from '@kinvolk/headlamp-plugin/lib';
 
 registerAppBarAction(<span>Hello</span>);
 
-// Example of using i18n (internationalization):
-// function MyComponent() {
-//   const { t } = useTranslation();
-//   return <div>{t('translation_key')}</div>;
-// }
+import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
+import { ClusterDetail } from './components/clusters/Detail';
+import { ClustersList } from './components/clusters/List';
+
+registerSidebarEntry({
+  name: 'CloudNativePG',
+  url: '/cnpg/clusters',
+  icon: 'mdi:database',
+  parent: '',
+  label: 'CloudNativePG',
+});
+
+registerSidebarEntry({
+  name: 'Clusters',
+  url: '/cnpg/clusters',
+  parent: 'CloudNativePG',
+  label: 'Clusters',
+});
+
+registerRoute({
+  path: '/cnpg/clusters',
+  sidebar: 'Clusters',
+  name: 'Clusters',
+  component: () => <ClustersList />,
+});
+
+registerRoute({
+  path: '/cnpg/clusters/:namespace/:name',
+  sidebar: 'Clusters',
+  name: 'Cluster',
+  component: () => <ClusterDetail />,
+});
