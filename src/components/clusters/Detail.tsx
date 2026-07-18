@@ -1,16 +1,59 @@
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import { Icon } from '@iconify/react';
+import { Activity, K8s } from '@kinvolk/headlamp-plugin/lib';
 import {
+  ActionButton,
   ConditionsTable,
   DetailsGrid,
   ResourceLink,
   SectionBox,
   SimpleTable,
   StatusLabel,
+  Terminal,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
 
 type Pod = InstanceType<typeof K8s.ResourceClasses.Pod>;
+
+function launchTerminal(pod: Pod) {
+  const activityId = 'cnpg-terminal-' + pod.metadata.uid;
+  Activity.launch({
+    id: activityId,
+    title: pod.metadata.name,
+    cluster: pod.cluster,
+    icon: <Icon icon="mdi:console" width="100%" height="100%" />,
+    location: 'full',
+    content: (
+      <Terminal
+        noDialog
+        open
+        item={pod}
+        onClose={() => Activity.close(activityId)}
+        isAttach={false}
+      />
+    ),
+  });
+}
+
+function InstanceActions({ pod }: { pod: Pod }) {
+  const history = useHistory();
+  return (
+    <>
+      <ActionButton
+        description="View logs"
+        icon="mdi:file-document-box-outline"
+        // The pod detail page auto-opens its log viewer when given ?view=logs (the same
+        // mechanism core Headlamp uses for its own "Show Logs" action).
+        onClick={() => history.push(`${pod.getDetailsLink()}?view=logs`)}
+      />
+      <ActionButton
+        description="Open terminal"
+        icon="mdi:console"
+        onClick={() => launchTerminal(pod)}
+      />
+    </>
+  );
+}
 
 function InstanceRoleLabel({ pod }: { pod: Pod }) {
   const role = pod.metadata.labels?.['cnpg.io/instanceRole'];
@@ -52,6 +95,10 @@ function InstancesSection({ cluster }: { cluster: Cluster }) {
           {
             label: 'Phase',
             getter: (pod: Pod) => pod.status.phase,
+          },
+          {
+            label: 'Actions',
+            getter: (pod: Pod) => <InstanceActions pod={pod} />,
           },
         ]}
         data={pods ?? []}
