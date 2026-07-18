@@ -9,13 +9,13 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - **Instance/Postgres log access** — filterable (severity, logger, text search), color-coded, live-following log viewer per instance.
 - **psql session against primary or a replica** — per-instance terminal action reusing Headlamp's pod exec, launched straight from the cluster detail view.
 - Also shipped along the way: per-instance Node/QoS/timeline, cluster System ID/image/primary-promotion-time/timeline, all read from fields the operator already populates (no live PG connection needed).
+- **#Storage (PVC) visibility and full-disk warnings** — directly extends the health indicator's root-cause story; effort depends on which data source we settle on (PVC objects alone vs. Prometheus/exec).
+- **#Pooler (PgBouncer) visibility** — same CRD-listing pattern as the cluster list, applied to a second resource type; mostly independent.
 
 ## Suggested implementation order
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-1. **#10 Storage (PVC) visibility and full-disk warnings** — directly extends the health indicator's root-cause story; effort depends on which data source we settle on (PVC objects alone vs. Prometheus/exec).
-2. **#9 Pooler (PgBouncer) visibility** — same CRD-listing pattern as the cluster list, applied to a second resource type; mostly independent.
 3. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
 4. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
 5. **#12 Edit PostgreSQL configuration** — independent of the backup work; moderate effort, moderate value.
