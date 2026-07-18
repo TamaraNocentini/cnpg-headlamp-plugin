@@ -14,6 +14,13 @@ interface SynchronousReplicaConfiguration {
   number: number;
 }
 
+/** Per-instance data the operator already collected during its last reconciliation loop. */
+export interface InstanceReportedState {
+  isPrimary: boolean;
+  timeLineID?: number;
+  ip?: string;
+}
+
 export interface CnpgCluster extends KubeObjectInterface {
   spec: {
     instances: number;
@@ -29,9 +36,14 @@ export interface CnpgCluster extends KubeObjectInterface {
     phaseReason?: string;
     currentPrimary?: string;
     targetPrimary?: string;
+    currentPrimaryTimestamp?: string;
     instances?: number;
     readyInstances?: number;
     conditions?: ClusterCondition[];
+    systemID?: string;
+    image?: string;
+    timelineID?: number;
+    instancesReportedState?: Record<string, InstanceReportedState>;
     [otherProps: string]: any;
   };
 }
@@ -104,6 +116,29 @@ export class Cluster extends KubeObject<CnpgCluster> {
     return (
       !!this.currentPrimary && !!this.targetPrimary && this.currentPrimary !== this.targetPrimary
     );
+  }
+
+  /** When the current primary was last promoted. */
+  get currentPrimaryTimestamp(): string | undefined {
+    return this.status.currentPrimaryTimestamp;
+  }
+
+  get systemID(): string | undefined {
+    return this.status.systemID;
+  }
+
+  /** PostgreSQL image actually in use (may lag spec.imageName during a rollout). */
+  get image(): string | undefined {
+    return this.status.image;
+  }
+
+  get timelineID(): number | undefined {
+    return this.status.timelineID;
+  }
+
+  /** Per-instance state the operator already collected — avoids us needing our own connection. */
+  getInstanceReportedState(podName: string): InstanceReportedState | undefined {
+    return this.status.instancesReportedState?.[podName];
   }
 
   get instances(): number {

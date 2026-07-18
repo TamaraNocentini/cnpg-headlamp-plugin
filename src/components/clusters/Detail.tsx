@@ -3,6 +3,7 @@ import { Activity, K8s } from '@kinvolk/headlamp-plugin/lib';
 import {
   ActionButton,
   ConditionsTable,
+  DateLabel,
   DetailsGrid,
   ResourceLink,
   SectionBox,
@@ -56,7 +57,12 @@ function InstanceActions({ pod }: { pod: Pod }) {
 }
 
 function InstanceRoleLabel({ pod }: { pod: Pod }) {
-  const role = pod.metadata.labels?.['cnpg.io/instanceRole'];
+  const role = pod.metadata.labels?.['cnpg.io/instanceRole'] ?? '-';
+  const isReady = pod.status.containerStatuses?.every(container => container.ready) ?? false;
+
+  if (!isReady) {
+    return <StatusLabel status="error">{role} (not ready)</StatusLabel>;
+  }
   switch (role) {
     case 'primary':
       return <StatusLabel status="success">primary</StatusLabel>;
@@ -65,7 +71,7 @@ function InstanceRoleLabel({ pod }: { pod: Pod }) {
     case 'unhealthy':
       return <StatusLabel status="error">unhealthy</StatusLabel>;
     default:
-      return <>{role ?? '-'}</>;
+      return <>{role}</>;
   }
 }
 
@@ -88,13 +94,21 @@ function InstancesSection({ cluster }: { cluster: Cluster }) {
             getter: (pod: Pod) => <InstanceRoleLabel pod={pod} />,
           },
           {
-            label: 'Ready',
-            getter: (pod: Pod) =>
-              pod.status.containerStatuses?.every(container => container.ready) ? 'Yes' : 'No',
-          },
-          {
             label: 'Phase',
             getter: (pod: Pod) => pod.status.phase,
+          },
+          {
+            label: 'Timeline',
+            getter: (pod: Pod) =>
+              cluster.getInstanceReportedState(pod.getName())?.timeLineID ?? '-',
+          },
+          {
+            label: 'Node',
+            getter: (pod: Pod) => pod.spec.nodeName,
+          },
+          {
+            label: 'QoS',
+            getter: (pod: Pod) => pod.status.qosClass ?? '-',
           },
           {
             label: 'Actions',
@@ -132,11 +146,29 @@ export function ClusterDetail() {
           },
           {
             name: 'Target Primary',
-            value: item.isSwitchoverInProgress ? item.targetPrimary : undefined,
+            value: item.targetPrimary,
+          },
+          {
+            name: 'Primary Since',
+            value: item.currentPrimaryTimestamp && (
+              <DateLabel date={item.currentPrimaryTimestamp} format="mini" />
+            ),
           },
           {
             name: 'Instances',
             value: `${item.readyInstances} ready / ${item.instances} total`,
+          },
+          {
+            name: 'Timeline',
+            value: item.timelineID?.toString(),
+          },
+          {
+            name: 'PostgreSQL Image',
+            value: item.image,
+          },
+          {
+            name: 'System ID',
+            value: item.systemID,
           },
           {
             name: 'Synchronous Replication',
