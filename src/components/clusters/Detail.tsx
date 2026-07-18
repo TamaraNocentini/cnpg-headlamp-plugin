@@ -21,6 +21,7 @@ import { Cluster } from '../../resources/cluster';
 import { formatCnpgLogLine, parseCnpgLogLine } from '../../resources/cnpgLog';
 
 type Pod = InstanceType<typeof K8s.ResourceClasses.Pod>;
+type Pvc = InstanceType<typeof K8s.ResourceClasses.PersistentVolumeClaim>;
 
 function launchTerminal(pod: Pod) {
   const activityId = 'cnpg-terminal-' + pod.metadata.uid;
@@ -174,6 +175,21 @@ function JobActions({ pod }: { pod: Pod }) {
   );
 }
 
+function PodPhaseLabel({ pod }: { pod: Pod }) {
+  const phase = pod.status.phase;
+  switch (phase) {
+    case 'Succeeded':
+      return <StatusLabel status="success">{phase}</StatusLabel>;
+    case 'Failed':
+    case 'Unknown':
+      return <StatusLabel status="error">{phase}</StatusLabel>;
+    case 'Pending':
+      return <StatusLabel status="warning">{phase}</StatusLabel>;
+    default:
+      return <StatusLabel status="">{phase}</StatusLabel>;
+  }
+}
+
 function InstanceRoleLabel({ pod }: { pod: Pod }) {
   const role = pod.metadata.labels?.['cnpg.io/instanceRole'] ?? '-';
   const isReady = pod.status.containerStatuses?.every(container => container.ready) ?? false;
@@ -249,6 +265,12 @@ function JobsSection({ cluster }: { cluster: Cluster }) {
     labelSelector: `cnpg.io/cluster=${cluster.getName()},cnpg.io/jobRole`,
   });
 
+  // Hide the section once we know there are no bootstrap jobs, rather than showing an empty
+  // table — but keep rendering (with a loading state) while pods is still null.
+  if (pods && pods.length === 0) {
+    return null;
+  }
+
   return (
     <SectionBox title="Jobs">
       <SimpleTable
@@ -263,7 +285,7 @@ function JobsSection({ cluster }: { cluster: Cluster }) {
           },
           {
             label: 'Phase',
-            getter: (pod: Pod) => pod.status.phase,
+            getter: (pod: Pod) => <PodPhaseLabel pod={pod} />,
           },
           {
             label: 'Node',
@@ -276,6 +298,64 @@ function JobsSection({ cluster }: { cluster: Cluster }) {
         ]}
         data={pods ?? []}
         emptyMessage="No bootstrap jobs running"
+      />
+    </SectionBox>
+  );
+}
+
+function PvcPhaseLabel({ pvc }: { pvc: Pvc }) {
+  const phase = pvc.status?.phase;
+  switch (phase) {
+    case 'Bound':
+      return <StatusLabel status="success">{phase}</StatusLabel>;
+    case 'Lost':
+      return <StatusLabel status="error">{phase}</StatusLabel>;
+    case 'Pending':
+      return <StatusLabel status="warning">{phase}</StatusLabel>;
+    default:
+      return <StatusLabel status="">{phase}</StatusLabel>;
+  }
+}
+
+function PvcsSection({ cluster }: { cluster: Cluster }) {
+  // Every instance can have more than one PVC (PG_DATA, PG_WAL, and optionally per-tablespace
+  // volumes), each labeled with which instance and role it belongs to.
+  const [pvcs] = K8s.ResourceClasses.PersistentVolumeClaim.useList({
+    namespace: cluster.getNamespace(),
+    labelSelector: `cnpg.io/cluster=${cluster.getName()}`,
+  });
+
+  return (
+    <SectionBox title="Storage">
+      <SimpleTable
+        columns={[
+          {
+            label: 'Name',
+            getter: (pvc: Pvc) => <ResourceLink resource={pvc} />,
+          },
+          {
+            label: 'Instance',
+            getter: (pvc: Pvc) => pvc.metadata.labels?.['cnpg.io/instanceName'] ?? '-',
+          },
+          {
+            label: 'Role',
+            getter: (pvc: Pvc) => pvc.metadata.labels?.['cnpg.io/pvcRole'] ?? '-',
+          },
+          {
+            label: 'Status',
+            getter: (pvc: Pvc) => <PvcPhaseLabel pvc={pvc} />,
+          },
+          {
+            label: 'Capacity',
+            getter: (pvc: Pvc) =>
+              pvc.status?.capacity?.storage ?? pvc.spec?.resources?.requests?.storage ?? '-',
+          },
+          {
+            label: 'Storage Class',
+            getter: (pvc: Pvc) => pvc.spec?.storageClassName ?? '-',
+          },
+        ]}
+        data={pvcs ?? []}
       />
     </SectionBox>
   );
@@ -339,7 +419,9 @@ export function ClusterDetail() {
                   failover
                 </StatusLabel>
               ) : item.hasSynchronousReplication ? (
-                `On (${item.syncReplicasRequired} required)`
+                <StatusLabel status="success">
+                  On ({item.syncReplicasRequired} required)
+                </StatusLabel>
               ) : (
                 'N/A (single instance)'
               ),
@@ -355,6 +437,10 @@ export function ClusterDetail() {
           {
             id: 'jobs',
             section: <JobsSection cluster={item} />,
+          },
+          {
+            id: 'storage',
+            section: <PvcsSection cluster={item} />,
           },
           {
             id: 'conditions',

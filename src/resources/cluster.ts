@@ -12,6 +12,7 @@ export interface ClusterCondition {
 interface SynchronousReplicaConfiguration {
   method: 'any' | 'first';
   number: number;
+  dataDurability?: 'required' | 'preferred';
 }
 
 /** Per-instance data the operator already collected during its last reconciliation loop. */
@@ -75,6 +76,13 @@ export class Cluster extends KubeObject<CnpgCluster> {
         instances: 3,
         storage: {
           size: '1Gi',
+        },
+        postgresql: {
+          synchronous: {
+            method: 'any',
+            number: 1,
+            dataDurability: 'required',
+          },
         },
       },
     };

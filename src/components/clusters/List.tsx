@@ -38,7 +38,7 @@ export function ClustersList() {
             item.instances > 1 && !item.hasSynchronousReplication ? (
               <StatusLabel status="warning">Off</StatusLabel>
             ) : item.hasSynchronousReplication ? (
-              'On'
+              <StatusLabel status="success">On</StatusLabel>
             ) : (
               'N/A'
             ),
