@@ -9,12 +9,12 @@ Ordered by dependencies first, then easy-and-high-value before harder/riskier or
 1. **#1 Cluster list with health indicator** — foundational; almost every other item assumes a cluster list/detail view exists to attach to.
 2. **#2 Instance roles and sync replication warning** — cheap extension of #1, just reading more `status` fields onto the same view.
 3. **#11 Instance/Postgres log access** — likely reuses Headlamp's existing pod-logs viewer; high debugging value for cheap effort, and depends only on #1/#2 for pod selection.
-4. **#10 Storage (PVC) visibility and full-disk warnings** — directly extends the health indicator's root-cause story from #1; effort depends on which data source we settle on (PVC objects alone vs. Prometheus/exec).
-5. **#9 Pooler (PgBouncer) visibility** — same CRD-listing pattern as #1, applied to a second resource type; mostly independent.
-6. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
-7. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
-8. **#12 Edit PostgreSQL configuration** — independent of the backup work; moderate effort, moderate value.
-9. **#3 psql session against primary or a replica** — depends on #2's role picker; higher effort due to exec/terminal integration and the security/RBAC considerations.
+4. **#3 psql session against primary or a replica** — de-scoped: Headlamp's existing pod exec/terminal already works against CNPG's pods with no special plumbing, so this is now just a convenience shortcut (pick the right pod by role, maybe pre-fill `psql`) on top of #2's role picker, not the exec/terminal build-out originally scoped.
+5. **#10 Storage (PVC) visibility and full-disk warnings** — directly extends the health indicator's root-cause story from #1; effort depends on which data source we settle on (PVC objects alone vs. Prometheus/exec).
+6. **#9 Pooler (PgBouncer) visibility** — same CRD-listing pattern as #1, applied to a second resource type; mostly independent.
+7. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
+8. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
+9. **#12 Edit PostgreSQL configuration** — independent of the backup work; moderate effort, moderate value.
 10. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; higher effort for the payoff versus #10/#11.
 11. **#7 Multi-step cluster creation wizard** — highest-effort form work, and deliberately reuses the sync-replication (#2) and backup (#4/#5) sub-forms, so should come after those exist.
 12. **#8 Bootstrap a cluster from a backup (recovery)** — depends on #7's wizard scaffolding *and* an external Barman Cloud plugin dependency; most moving pieces, so last.
@@ -47,11 +47,12 @@ Open questions to resolve during implementation:
 
 From the cluster detail view, let the user open an interactive `psql` session against the primary instance, or pick a specific replica.
 
+Confirmed during roadmap review: Headlamp's built-in pod exec/terminal already works against CNPG's pods out of the box (they're just regular pods, no special plugin plumbing needed). This de-scopes the item considerably — the exec/terminal mechanism and its RBAC enforcement are already solved by core Headlamp; what's left is convenience on top of it.
+
 Open questions to resolve during implementation:
-- Likely built on Headlamp's existing pod exec/terminal support (same mechanism as "exec into pod" in core Headlamp) rather than a bespoke terminal — need to confirm what that API looks like and whether it's usable from a plugin.
-- Instance pods are selected by role via the `cnpg.io/instanceRole` (or similar) pod label — need to confirm exact label name/value for primary vs replica to build the picker.
-- Credentials: CNPG stores superuser/app credentials in a Secret (`<cluster>-superuser`, `<cluster>-app`); need to decide which role to connect as by default, and whether the user can choose.
-- Security/authorization: this effectively grants shell-level DB access from the UI — should probably be gated behind whatever RBAC the user already has on `pods/exec` in that namespace (Kubernetes will enforce it, but worth confirming Headlamp surfaces a clear permission error rather than failing silently).
+- Narrowed scope: surface a "Connect" action per instance (from the role picker in #2) that opens Headlamp's existing pod terminal already pointed at the right pod, rather than building any exec/terminal UI ourselves.
+- Whether to go further and pre-fill/auto-run the `psql` command in that terminal (vs. just landing the user in a shell where they run it themselves) — needs CNPG's superuser/app credentials from the `<cluster>-superuser`/`<cluster>-app` Secret if so.
+- Since Headlamp's terminal already enforces `pods/exec` RBAC itself, no additional authorization handling should be needed on our side beyond picking the right pod.
 
 ## 4. On-demand backups and backup list with status
 
