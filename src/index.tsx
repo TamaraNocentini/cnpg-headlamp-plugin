@@ -17,6 +17,9 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
+import { PoolerCreate } from './components/poolers/Create';
+import { PoolerDetail } from './components/poolers/Detail';
+import { PoolersList } from './components/poolers/List';
 
 registerSidebarEntry({
   name: 'CloudNativePG',
@@ -31,6 +34,13 @@ registerSidebarEntry({
   url: '/cnpg/clusters',
   parent: 'CloudNativePG',
   label: 'Clusters',
+});
+
+registerSidebarEntry({
+  name: 'Poolers',
+  url: '/cnpg/poolers',
+  parent: 'CloudNativePG',
+  label: 'Poolers',
 });
 
 registerRoute({
@@ -51,4 +61,28 @@ registerRoute({
   name: 'CnpgClusterDetail',
   exact: true,
   component: () => <ClusterDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/poolers',
+  sidebar: 'Poolers',
+  name: 'CnpgPoolers',
+  exact: true,
+  component: () => <PoolersList />,
+});
+
+registerRoute({
+  path: '/cnpg/poolers/new',
+  sidebar: 'Poolers',
+  name: 'CnpgPoolerCreate',
+  exact: true,
+  component: () => <PoolerCreate />,
+});
+
+registerRoute({
+  path: '/cnpg/poolers/:namespace/:name',
+  sidebar: 'Poolers',
+  name: 'CnpgPoolerDetail',
+  exact: true,
+  component: () => <PoolerDetail />,
 });

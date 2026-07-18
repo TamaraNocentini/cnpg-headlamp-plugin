@@ -1,150 +1,21 @@
-import { Icon } from '@iconify/react';
-import { Activity, K8s } from '@kinvolk/headlamp-plugin/lib';
+import { K8s } from '@kinvolk/headlamp-plugin/lib';
 import {
   ActionButton,
   ConditionsTable,
   DateLabel,
   DetailsGrid,
-  LogViewer,
   ResourceLink,
   SectionBox,
   SimpleTable,
   StatusLabel,
-  Terminal,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
-import TextField from '@mui/material/TextField';
-import { useEffect, useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
-import { formatCnpgLogLine, parseCnpgLogLine } from '../../resources/cnpgLog';
+import { Pooler } from '../../resources/pooler';
+import { launchLogs, launchTerminal, Pod, PodPhaseLabel } from '../common/podActions';
+import { PoolerStatusLabel } from '../poolers/List';
 
-type Pod = InstanceType<typeof K8s.ResourceClasses.Pod>;
 type Pvc = InstanceType<typeof K8s.ResourceClasses.PersistentVolumeClaim>;
-
-function launchTerminal(pod: Pod) {
-  const activityId = 'cnpg-terminal-' + pod.metadata.uid;
-  Activity.launch({
-    id: activityId,
-    title: pod.metadata.name,
-    cluster: pod.cluster,
-    icon: <Icon icon="mdi:console" width="100%" height="100%" />,
-    location: 'full',
-    content: (
-      <Terminal
-        noDialog
-        open
-        item={pod}
-        onClose={() => Activity.close(activityId)}
-        isAttach={false}
-      />
-    ),
-  });
-}
-
-function InstanceLogViewer({ pod, onClose }: { pod: Pod; onClose: () => void }) {
-  const [rawLogs, setRawLogs] = useState<string[]>([]);
-  const [severityFilter, setSeverityFilter] = useState('');
-  const [loggerFilter, setLoggerFilter] = useState('');
-  const [search, setSearch] = useState('');
-  const container = pod.spec.containers[0]?.name;
-
-  useEffect(() => {
-    // getLogs mutates and reuses the same array reference on every streamed chunk, so we copy it
-    // — otherwise React's setState bails out after the first update (same reference => no re-render).
-    const cancel = pod.getLogs(container, ({ logs: lines }) => setRawLogs([...lines]), {
-      tailLines: 200,
-      follow: true,
-    });
-    return cancel;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pod.metadata.uid, container]);
-
-  const parsedLogs = useMemo(() => rawLogs.map(parseCnpgLogLine), [rawLogs]);
-
-  const severities = useMemo(
-    () => Array.from(new Set(parsedLogs.map(entry => entry.severity).filter(Boolean))).sort(),
-    [parsedLogs]
-  );
-  const loggers = useMemo(
-    () => Array.from(new Set(parsedLogs.map(entry => entry.logger).filter(Boolean))).sort(),
-    [parsedLogs]
-  );
-
-  const displayLogs = useMemo(
-    () =>
-      parsedLogs
-        .filter(entry => !severityFilter || entry.severity === severityFilter)
-        .filter(entry => !loggerFilter || entry.logger === loggerFilter)
-        .filter(entry => !search || entry.message.toLowerCase().includes(search.toLowerCase()))
-        .map(formatCnpgLogLine),
-    [parsedLogs, severityFilter, loggerFilter, search]
-  );
-
-  return (
-    <LogViewer
-      noDialog
-      open
-      logs={displayLogs}
-      title={pod.metadata.name}
-      downloadName={`${pod.metadata.name}_${container}`}
-      onClose={onClose}
-      topActions={[
-        <TextField
-          key="search"
-          size="small"
-          placeholder="Search message…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />,
-        <Select
-          key="severity"
-          size="small"
-          displayEmpty
-          value={severityFilter}
-          onChange={e => setSeverityFilter(e.target.value)}
-        >
-          <MenuItem value="">All levels</MenuItem>
-          {severities.map(severity => (
-            <MenuItem key={severity} value={severity}>
-              {severity}
-            </MenuItem>
-          ))}
-        </Select>,
-        <Select
-          key="logger"
-          size="small"
-          displayEmpty
-          value={loggerFilter}
-          onChange={e => setLoggerFilter(e.target.value)}
-        >
-          <MenuItem value="">All loggers</MenuItem>
-          {loggers.map(logger => (
-            <MenuItem key={logger} value={logger}>
-              {logger}
-            </MenuItem>
-          ))}
-        </Select>,
-      ]}
-    />
-  );
-}
-
-// Opens the log viewer/terminal in an overlay (like core Headlamp's own pod actions) rather than
-// navigating to the pod's own page — that way closing it leaves the user right where they were,
-// instead of stranding them on the pod detail page.
-function launchLogs(pod: Pod) {
-  const activityId = 'cnpg-logs-' + pod.metadata.uid;
-  Activity.launch({
-    id: activityId,
-    title: pod.metadata.name,
-    cluster: pod.cluster,
-    icon: <Icon icon="mdi:file-document-box-outline" width="100%" height="100%" />,
-    location: 'full',
-    content: <InstanceLogViewer pod={pod} onClose={() => Activity.close(activityId)} />,
-  });
-}
 
 function InstanceActions({ pod }: { pod: Pod }) {
   return (
@@ -173,21 +44,6 @@ function JobActions({ pod }: { pod: Pod }) {
       onClick={() => launchLogs(pod)}
     />
   );
-}
-
-function PodPhaseLabel({ pod }: { pod: Pod }) {
-  const phase = pod.status.phase;
-  switch (phase) {
-    case 'Succeeded':
-      return <StatusLabel status="success">{phase}</StatusLabel>;
-    case 'Failed':
-    case 'Unknown':
-      return <StatusLabel status="error">{phase}</StatusLabel>;
-    case 'Pending':
-      return <StatusLabel status="warning">{phase}</StatusLabel>;
-    default:
-      return <StatusLabel status="">{phase}</StatusLabel>;
-  }
 }
 
 function InstanceRoleLabel({ pod }: { pod: Pod }) {
@@ -361,6 +217,54 @@ function PvcsSection({ cluster }: { cluster: Cluster }) {
   );
 }
 
+function PoolersSection({ cluster }: { cluster: Cluster }) {
+  // Poolers reference their cluster by spec.cluster.name rather than a label, so we fetch
+  // every Pooler in the namespace and filter client-side instead of using a labelSelector.
+  const [allPoolers] = Pooler.useList({ namespace: cluster.getNamespace() });
+  const poolers = allPoolers?.filter(pooler => pooler.clusterName === cluster.getName());
+
+  if (poolers && poolers.length === 0) {
+    return null;
+  }
+
+  return (
+    <SectionBox title="Poolers">
+      <SimpleTable
+        columns={[
+          {
+            label: 'Name',
+            // ResourceLink defaults its route lookup to resource.kind ('Pooler'), but our route
+            // is registered as 'CnpgPoolerDetail' (see index.tsx) to dodge a naming collision —
+            // so the default lookup fails silently and needs this explicit override. Pod/PVC
+            // links elsewhere in this file don't need it since those are core Headlamp types
+            // whose routes are already registered under their bare kind name.
+            getter: (pooler: Pooler) => (
+              <ResourceLink resource={pooler} routeName="CnpgPoolerDetail" />
+            ),
+          },
+          {
+            label: 'Type',
+            getter: (pooler: Pooler) => pooler.type,
+          },
+          {
+            label: 'Pool Mode',
+            getter: (pooler: Pooler) => pooler.poolMode ?? '-',
+          },
+          {
+            label: 'Instances',
+            getter: (pooler: Pooler) => pooler.instances,
+          },
+          {
+            label: 'Status',
+            getter: (pooler: Pooler) => <PoolerStatusLabel pooler={pooler} />,
+          },
+        ]}
+        data={poolers ?? []}
+      />
+    </SectionBox>
+  );
+}
+
 export function ClusterDetail() {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
 
@@ -441,6 +345,10 @@ export function ClusterDetail() {
           {
             id: 'storage',
             section: <PvcsSection cluster={item} />,
+          },
+          {
+            id: 'poolers',
+            section: <PoolersSection cluster={item} />,
           },
           {
             id: 'conditions',
