@@ -1,3 +1,5 @@
+import { Icon } from '@iconify/react';
+import { Activity } from '@kinvolk/headlamp-plugin/lib';
 import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import FormControl from '@mui/material/FormControl';
@@ -7,7 +9,6 @@ import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
-import { useHistory } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
 import { Pooler } from '../../resources/pooler';
 
@@ -16,8 +17,7 @@ type PoolerType = 'rw' | 'ro' | 'r';
 // available (it requires protocol-level guarantees pgbouncer can't make for arbitrary clients).
 type PoolMode = 'transaction' | 'session';
 
-export function PoolerCreate() {
-  const history = useHistory();
+function PoolerCreateForm({ onClose }: { onClose: () => void }) {
   const [clusters] = Cluster.useList();
   const [clusterKey, setClusterKey] = useState('');
   const [name, setName] = useState('');
@@ -38,7 +38,7 @@ export function PoolerCreate() {
     setError(null);
     const namespace = selectedCluster.getNamespace();
     try {
-      const created = await Pooler.apiEndpoint.post({
+      await Pooler.apiEndpoint.post({
         apiVersion: 'postgresql.cnpg.io/v1',
         kind: 'Pooler',
         metadata: { name, namespace },
@@ -48,9 +48,7 @@ export function PoolerCreate() {
           pgbouncer: { poolMode },
         },
       });
-      // Route through a Pooler instance's getListLink() rather than building the path
-      // ourselves, so the /c/<cluster> prefix Headlamp's router expects is included correctly.
-      history.push(new Pooler(created).getListLink());
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create pooler');
       setSubmitting(false);
@@ -131,4 +129,18 @@ export function PoolerCreate() {
       </Button>
     </SectionBox>
   );
+}
+
+// Opens the create form in an overlay (like core Headlamp's own resource create dialogs) rather
+// than navigating to a dedicated page — closing it leaves the user on the list, which then picks
+// up the new Pooler via its own live watch.
+export function launchPoolerCreate() {
+  const activityId = 'cnpg-pooler-create';
+  Activity.launch({
+    id: activityId,
+    title: 'Create Pooler',
+    icon: <Icon icon="mdi:plus-circle" width="100%" height="100%" />,
+    location: 'split-right',
+    content: <PoolerCreateForm onClose={() => Activity.close(activityId)} />,
+  });
 }

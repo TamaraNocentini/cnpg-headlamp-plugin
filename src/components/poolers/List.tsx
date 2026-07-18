@@ -1,6 +1,7 @@
-import { Link, ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { Pooler } from '../../resources/pooler';
+import { launchPoolerCreate } from './Create';
 
 export function PoolerStatusLabel({ pooler }: { pooler: Pooler }) {
   if (pooler.isPaused) {
@@ -19,11 +20,14 @@ export function PoolersList() {
       resourceClass={Pooler}
       headerProps={{
         actions: [
-          <Link key="create-pooler" routeName="CnpgPoolerCreate">
-            <Button variant="contained" color="primary">
-              Create Pooler
-            </Button>
-          </Link>,
+          <Button
+            key="create-pooler"
+            variant="contained"
+            color="primary"
+            onClick={() => launchPoolerCreate()}
+          >
+            Create Pooler
+          </Button>,
         ],
       }}
       columns={[
