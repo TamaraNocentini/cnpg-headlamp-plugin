@@ -162,6 +162,18 @@ function InstanceActions({ pod }: { pod: Pod }) {
   );
 }
 
+// Bootstrap job pods (initdb/join/full-recovery/...) don't have a running container to exec
+// into once complete, so only logs make sense here — no terminal action.
+function JobActions({ pod }: { pod: Pod }) {
+  return (
+    <ActionButton
+      description="View logs"
+      icon="mdi:file-document-box-outline"
+      onClick={() => launchLogs(pod)}
+    />
+  );
+}
+
 function InstanceRoleLabel({ pod }: { pod: Pod }) {
   const role = pod.metadata.labels?.['cnpg.io/instanceRole'] ?? '-';
   const isReady = pod.status.containerStatuses?.every(container => container.ready) ?? false;
@@ -182,9 +194,11 @@ function InstanceRoleLabel({ pod }: { pod: Pod }) {
 }
 
 function InstancesSection({ cluster }: { cluster: Cluster }) {
+  // cnpg.io/podRole=instance excludes the transient initdb/join/full-recovery bootstrap job pods
+  // (see JobsSection), which also carry the cnpg.io/cluster label but aren't instances.
   const [pods] = K8s.ResourceClasses.Pod.useList({
     namespace: cluster.getNamespace(),
-    labelSelector: `cnpg.io/cluster=${cluster.getName()}`,
+    labelSelector: `cnpg.io/cluster=${cluster.getName()},cnpg.io/podRole=instance`,
   });
 
   return (
@@ -222,6 +236,46 @@ function InstancesSection({ cluster }: { cluster: Cluster }) {
           },
         ]}
         data={pods ?? []}
+      />
+    </SectionBox>
+  );
+}
+
+function JobsSection({ cluster }: { cluster: Cluster }) {
+  // cnpg.io/jobRole (initdb, join, full-recovery, ...) identifies the transient bootstrap job
+  // pods CNPG creates alongside instances — they carry cnpg.io/cluster too but not podRole.
+  const [pods] = K8s.ResourceClasses.Pod.useList({
+    namespace: cluster.getNamespace(),
+    labelSelector: `cnpg.io/cluster=${cluster.getName()},cnpg.io/jobRole`,
+  });
+
+  return (
+    <SectionBox title="Jobs">
+      <SimpleTable
+        columns={[
+          {
+            label: 'Name',
+            getter: (pod: Pod) => <ResourceLink resource={pod} />,
+          },
+          {
+            label: 'Job Role',
+            getter: (pod: Pod) => pod.metadata.labels?.['cnpg.io/jobRole'] ?? '-',
+          },
+          {
+            label: 'Phase',
+            getter: (pod: Pod) => pod.status.phase,
+          },
+          {
+            label: 'Node',
+            getter: (pod: Pod) => pod.spec.nodeName,
+          },
+          {
+            label: 'Actions',
+            getter: (pod: Pod) => <JobActions pod={pod} />,
+          },
+        ]}
+        data={pods ?? []}
+        emptyMessage="No bootstrap jobs running"
       />
     </SectionBox>
   );
@@ -297,6 +351,10 @@ export function ClusterDetail() {
           {
             id: 'instances',
             section: <InstancesSection cluster={item} />,
+          },
+          {
+            id: 'jobs',
+            section: <JobsSection cluster={item} />,
           },
           {
             id: 'conditions',

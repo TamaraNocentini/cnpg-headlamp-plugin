@@ -62,6 +62,24 @@ export class Cluster extends KubeObject<CnpgCluster> {
   static apiVersion = 'postgresql.cnpg.io/v1';
   static isNamespaced = true;
 
+  // Seeds the "Create" YAML editor with a minimal working example instead of an empty object.
+  // TODO: replace with a proper step-by-step cluster creation wizard (roadmap #7).
+  static getBaseObject() {
+    return {
+      apiVersion: 'postgresql.cnpg.io/v1',
+      kind: 'Cluster',
+      metadata: {
+        name: '',
+      },
+      spec: {
+        instances: 3,
+        storage: {
+          size: '1Gi',
+        },
+      },
+    };
+  }
+
   // Returning the raw path (rather than the 'CnpgClusterDetail' route name registered in
   // index.tsx) is deliberate: KubeObject.getDetailsLink() -> createRouteURL() falls back to a
   // path-based route lookup and correctly generates the link, whereas the name-based lookup was
