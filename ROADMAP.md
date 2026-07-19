@@ -94,3 +94,29 @@ Open questions to resolve during implementation:
 - PVC capacity/usage isn't available from the `Cluster` CR itself — likely needs `kubectl` PVC objects for capacity plus either Prometheus node/kubelet volume metrics (ties into #6) or `df`-via-exec for actual used space; need to decide which source to rely on and what to do when neither is available.
 - CNPG supports separate WAL and tablespace PVCs per instance (not just the main data volume) — need to show all relevant volumes per instance, not just the primary data PVC.
 - Threshold for "running low" (e.g. percentage-based warning) should probably be configurable rather than hardcoded.
+
+## 11. Operator/plugin status overview page
+
+A landing page for the top-level "CloudNativePG" sidebar entry (which currently just points at
+`/cnpg/clusters`) showing the health of the CNPG installation itself: whether the operator is
+running, its version, and which CNPG-i plugins (Barman Cloud, etc.) are installed and healthy —
+rather than dropping straight into the cluster list with no indication of whether the operator
+or the plugins backup/recovery features depend on are even present.
+
+Open questions to resolve during implementation:
+- Operator status is likely derived from the `cnpg-controller-manager` Deployment/Pods (replicas
+  ready, image/version) in whichever namespace it's installed into — need to confirm how to
+  locate that namespace reliably (label selector vs. a configurable/discovered value) rather than
+  hardcoding `cnpg-system`.
+- Installed CNPG-i plugins (e.g. Barman Cloud) register themselves via a sidecar/deployment plus
+  a `Secret`/CRD footprint — need to determine the most reliable signal to enumerate "installed
+  plugins" (e.g. presence of `objectstores.barmancloud.cnpg.io` CRD for Barman Cloud) versus
+  querying the plugin registration mechanism CNPG-i itself exposes, if any.
+- Decide whether the "CloudNativePG" sidebar entry's `url` changes to point at this new page
+  (with Clusters becoming a normal child entry), or whether this ships as an additional child
+  entry alongside Clusters/Poolers/ObjectStores — changing the parent's target affects existing
+  navigation muscle memory.
+- Should missing/unhealthy pieces (operator down, expected plugin not installed) surface actionable
+  guidance (e.g. link to install docs) rather than just a red status, consistent with the
+  graceful-degradation approach planned for Prometheus (#6) and the Barman Cloud plugin dependency
+  in #8.
