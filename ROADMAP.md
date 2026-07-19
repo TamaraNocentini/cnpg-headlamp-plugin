@@ -170,3 +170,57 @@ Open questions to resolve during implementation:
   uses, so all three forms guarantee the preview matches what's actually sent.
 - `@monaco-editor/react` and `js-yaml` are already direct dependencies (added for the Cluster
   form) — no new dependency work needed, just reuse.
+
+## 14. Custom backup server name in the Cluster creation form
+
+The Cluster form's Backup section (`src/components/clusters/Create.tsx`) only lets users pick the
+target `ObjectStore` — it always sets `spec.plugins[].parameters.barmanObjectName` but never
+`serverName`, so backups are filed under the object store using the cluster's own `metadata.name`
+by default. The recovery side of the same form already exposes this (`recoveryServerName`, see
+`RECOVERY_EXTERNAL_CLUSTER_NAME` handling around line 101-118) — the backup side needs the
+equivalent field so users can archive under a different server name than the cluster's own name
+(e.g. to keep backups from a renamed/recreated cluster under one continuous name/history in the
+object store).
+
+Open questions to resolve during implementation:
+- Add a `backupServerName` field alongside `backupObjectStoreName` (both currently plain
+  `useState`, see line ~141), optional — when empty, omit `serverName` from
+  `spec.plugins[].parameters` entirely so CNPG's own default (the cluster's name) applies, rather
+  than sending an empty string.
+- Update `buildClusterManifest()`'s backup block (line ~85-98) to include
+  `parameters: { barmanObjectName, ...(backupServerName && { serverName: backupServerName }) }`.
+- Decide on a sensible placeholder/helper text distinguishing this from the recovery section's
+  "Source Server Name" field, since the two are easy to conflate (one names *this* cluster's own
+  backups, the other identifies *which* existing backups to restore from).
+
+## 15. Referring Clusters section on the ObjectStore detail page
+
+`ObjectStoreDetail` (`src/components/objectstores/Detail.tsx`) currently only shows the
+`ObjectStore`'s own fields (destination path, endpoint URL, retention policy) — there's no way to
+see which `Cluster`s actually use it. An `ObjectStore` can be referenced two ways, both via
+`spec.plugins[]`/`spec.externalClusters[].plugin` `parameters.barmanObjectName` (see
+`buildClusterManifest()` in `src/components/clusters/Create.tsx`, lines ~85-98 and ~101-118): as a
+**backup destination** (`spec.plugins[].parameters.barmanObjectName`, `isWALArchiver: true`) or as
+a **recovery source** (`spec.externalClusters[].plugin.parameters.barmanObjectName`). Surfacing
+both lists on the ObjectStore detail page would make it much easier to answer "is it safe to
+delete/modify this object store?" and "which clusters restored from this one?".
+
+Open questions to resolve during implementation:
+- Same pattern as `PoolersSection` on `ClusterDetail` (`src/components/clusters/Detail.tsx`,
+  ~lines 221-267): fetch `Cluster.useList({ namespace: objectStore.getNamespace() })` and filter
+  client-side, since there's no server-side index from `ObjectStore` name back to referring
+  `Cluster`s — CNPG doesn't populate `ObjectStore.status` with consumers.
+- Filter/match logic: a cluster references this object store as a backup destination if any
+  `spec.plugins[]` entry has `parameters.barmanObjectName === objectStore.getName()`; as a
+  recovery source if any `spec.externalClusters[].plugin.parameters.barmanObjectName` matches —
+  render as two separate lists (or one list with a Backup/Recovery-source badge per row) since a
+  cluster could plausibly appear in both.
+- Confirm whether `barmanObjectName` references are always same-namespace (assumed throughout the
+  Cluster/ObjectStore forms so far) — if so, the namespace-scoped list above is sufficient; if
+  cross-namespace references turn out to be possible, this would need a cluster-wide `Cluster` list
+  instead, which is a bigger RBAC/perf consideration.
+- Each row should link to the referring `Cluster`'s detail page — per the `ResourceLink` gotcha
+  already documented in `CLAUDE.md`, `<ResourceLink resource={cluster} />` looks up its route by
+  bare `kind` ('Cluster'), not by `Cluster.detailsRoute` (registered under the prefixed name
+  `CnpgClusterDetail`), so this needs the explicit `routeName="CnpgClusterDetail"` prop like the
+  other custom resources in this plugin.
