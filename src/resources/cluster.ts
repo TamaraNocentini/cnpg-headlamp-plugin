@@ -22,6 +22,32 @@ export interface InstanceReportedState {
   ip?: string;
 }
 
+/** Shared shape of spec.storage / spec.walStorage / tablespaces[].storage. */
+export interface StorageConfiguration {
+  size?: string;
+  storageClass?: string;
+  [otherProps: string]: any;
+}
+
+export interface TablespaceConfiguration {
+  name: string;
+  storage: StorageConfiguration;
+  temporary?: boolean;
+}
+
+/** Same shape used at spec.plugins[] and spec.externalClusters[].plugin. */
+export interface PluginConfiguration {
+  name: string;
+  enabled?: boolean;
+  isWALArchiver?: boolean;
+  parameters?: Record<string, string>;
+}
+
+export interface ExternalClusterConfiguration {
+  name: string;
+  plugin: PluginConfiguration;
+}
+
 export interface CnpgCluster extends KubeObjectInterface {
   spec: {
     instances: number;
@@ -30,6 +56,26 @@ export interface CnpgCluster extends KubeObjectInterface {
     postgresql?: {
       synchronous?: SynchronousReplicaConfiguration;
     };
+    storage?: StorageConfiguration;
+    walStorage?: StorageConfiguration;
+    tablespaces?: TablespaceConfiguration[];
+    backup?: {
+      volumeSnapshot?: {
+        className?: string;
+        walClassName?: string;
+        [otherProps: string]: any;
+      };
+      [otherProps: string]: any;
+    };
+    plugins?: PluginConfiguration[];
+    bootstrap?: {
+      recovery?: {
+        source?: string;
+        [otherProps: string]: any;
+      };
+      [otherProps: string]: any;
+    };
+    externalClusters?: ExternalClusterConfiguration[];
     [otherProps: string]: any;
   };
   status?: {
@@ -64,7 +110,8 @@ export class Cluster extends KubeObject<CnpgCluster> {
   static isNamespaced = true;
 
   // Seeds the "Create" YAML editor with a minimal working example instead of an empty object.
-  // TODO: replace with a proper step-by-step cluster creation wizard (roadmap #7).
+  // The guided form is components/clusters/Create.tsx (launchClusterCreate) — this is only a
+  // fallback for anything that falls back to a raw-YAML create flow.
   static getBaseObject() {
     return {
       apiVersion: 'postgresql.cnpg.io/v1',

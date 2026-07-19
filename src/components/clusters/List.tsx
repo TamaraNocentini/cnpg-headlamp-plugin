@@ -1,11 +1,25 @@
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import Button from '@mui/material/Button';
 import { Cluster } from '../../resources/cluster';
+import { launchClusterCreate } from './Create';
 
 export function ClustersList() {
   return (
     <ResourceListView
       title="Clusters"
       resourceClass={Cluster}
+      headerProps={{
+        actions: [
+          <Button
+            key="create-cluster"
+            variant="contained"
+            color="primary"
+            onClick={() => launchClusterCreate()}
+          >
+            Create Cluster
+          </Button>,
+        ],
+      }}
       columns={[
         'name',
         'namespace',
