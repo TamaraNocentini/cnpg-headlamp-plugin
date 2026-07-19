@@ -14,6 +14,7 @@ import { Cluster } from '../../resources/cluster';
 import { Pooler } from '../../resources/pooler';
 import { launchLogs, launchTerminal, Pod, PodPhaseLabel } from '../common/podActions';
 import { PoolerStatusLabel } from '../poolers/List';
+import { launchConnectActivity } from './connect';
 
 type Pvc = InstanceType<typeof K8s.ResourceClasses.PersistentVolumeClaim>;
 
@@ -274,6 +275,16 @@ export function ClusterDetail() {
       name={name}
       namespace={namespace}
       withEvents
+      actions={item =>
+        item && [
+          <ActionButton
+            key="connect"
+            description="Connect"
+            icon="mdi:power-plug-outline"
+            onClick={() => launchConnectActivity(item)}
+          />,
+        ]
+      }
       extraInfo={item =>
         item && [
           {
