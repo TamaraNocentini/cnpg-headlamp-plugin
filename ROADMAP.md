@@ -11,6 +11,7 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - Also shipped along the way: per-instance Node/QoS/timeline, cluster System ID/image/primary-promotion-time/timeline, all read from fields the operator already populates (no live PG connection needed).
 - **#Storage (PVC) visibility and full-disk warnings** — directly extends the health indicator's root-cause story; effort depends on which data source we settle on (PVC objects alone vs. Prometheus/exec).
 - **#Pooler (PgBouncer) visibility** — same CRD-listing pattern as the cluster list, applied to a second resource type; mostly independent.
+- **#14 Custom backup server name in the Cluster creation form** — optional "Server Name" field in the Backup section, defaulting to the cluster's own name when left empty.
 
 ## Suggested implementation order
 
@@ -170,28 +171,6 @@ Open questions to resolve during implementation:
   uses, so all three forms guarantee the preview matches what's actually sent.
 - `@monaco-editor/react` and `js-yaml` are already direct dependencies (added for the Cluster
   form) — no new dependency work needed, just reuse.
-
-## 14. Custom backup server name in the Cluster creation form
-
-The Cluster form's Backup section (`src/components/clusters/Create.tsx`) only lets users pick the
-target `ObjectStore` — it always sets `spec.plugins[].parameters.barmanObjectName` but never
-`serverName`, so backups are filed under the object store using the cluster's own `metadata.name`
-by default. The recovery side of the same form already exposes this (`recoveryServerName`, see
-`RECOVERY_EXTERNAL_CLUSTER_NAME` handling around line 101-118) — the backup side needs the
-equivalent field so users can archive under a different server name than the cluster's own name
-(e.g. to keep backups from a renamed/recreated cluster under one continuous name/history in the
-object store).
-
-Open questions to resolve during implementation:
-- Add a `backupServerName` field alongside `backupObjectStoreName` (both currently plain
-  `useState`, see line ~141), optional — when empty, omit `serverName` from
-  `spec.plugins[].parameters` entirely so CNPG's own default (the cluster's name) applies, rather
-  than sending an empty string.
-- Update `buildClusterManifest()`'s backup block (line ~85-98) to include
-  `parameters: { barmanObjectName, ...(backupServerName && { serverName: backupServerName }) }`.
-- Decide on a sensible placeholder/helper text distinguishing this from the recovery section's
-  "Source Server Name" field, since the two are easy to conflate (one names *this* cluster's own
-  backups, the other identifies *which* existing backups to restore from).
 
 ## 15. Referring Clusters section on the ObjectStore detail page
 

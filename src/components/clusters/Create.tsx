@@ -47,6 +47,7 @@ interface ClusterFormState {
   tablespaces: TablespaceRow[];
   backupEnabled: boolean;
   backupObjectStoreName: string;
+  backupServerName: string;
   volumeSnapshotEnabled: boolean;
   volumeSnapshotClassName: string;
   bootstrapMethod: BootstrapMethod;
@@ -87,7 +88,10 @@ function buildClusterManifest(state: ClusterFormState) {
       {
         name: BARMAN_CLOUD_PLUGIN_NAME,
         isWALArchiver: true,
-        parameters: { barmanObjectName: state.backupObjectStoreName },
+        parameters: {
+          barmanObjectName: state.backupObjectStoreName,
+          ...(state.backupServerName && { serverName: state.backupServerName }),
+        },
       },
     ];
 
@@ -139,6 +143,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
   const [tablespaces, setTablespaces] = useState<TablespaceRow[]>([]);
   const [backupEnabled, setBackupEnabled] = useState(false);
   const [backupObjectStoreName, setBackupObjectStoreName] = useState('');
+  const [backupServerName, setBackupServerName] = useState('');
   const [volumeSnapshotEnabled, setVolumeSnapshotEnabled] = useState(false);
   const [volumeSnapshotClassName, setVolumeSnapshotClassName] = useState('');
   const [bootstrapMethod, setBootstrapMethod] = useState<BootstrapMethod>('initdb');
@@ -164,6 +169,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
     tablespaces,
     backupEnabled,
     backupObjectStoreName,
+    backupServerName,
     volumeSnapshotEnabled,
     volumeSnapshotClassName,
     bootstrapMethod,
@@ -183,6 +189,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       tablespaces,
       backupEnabled,
       backupObjectStoreName,
+      backupServerName,
       volumeSnapshotEnabled,
       volumeSnapshotClassName,
       bootstrapMethod,
@@ -396,6 +403,17 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
             ))}
           </Select>
         </FormControl>
+      )}
+      {backupEnabled && (
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Server Name (optional)"
+          placeholder={name || 'cluster-example'}
+          helperText="The name backups are filed under in the object store. Defaults to this cluster's name if left empty."
+          value={backupServerName}
+          onChange={e => setBackupServerName(e.target.value)}
+        />
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
