@@ -258,4 +258,18 @@ export class Cluster extends KubeObject<CnpgCluster> {
         return 'Unhealthy';
     }
   }
+
+  /** True if this Cluster archives/uploads backups to the given ObjectStore. */
+  referencesObjectStoreAsBackup(objectStoreName: string): boolean {
+    return (this.spec.plugins ?? []).some(
+      plugin => plugin.parameters?.barmanObjectName === objectStoreName
+    );
+  }
+
+  /** True if this Cluster was bootstrapped via recovery from the given ObjectStore. */
+  referencesObjectStoreAsRecoverySource(objectStoreName: string): boolean {
+    return (this.spec.externalClusters ?? []).some(
+      external => external.plugin?.parameters?.barmanObjectName === objectStoreName
+    );
+  }
 }

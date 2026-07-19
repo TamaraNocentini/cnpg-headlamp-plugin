@@ -16,18 +16,18 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - **#7 Cluster creation form** — a single scrollable form rather than a multi-step wizard (matches the Pooler/ObjectStore Create forms' existing pattern, and avoided building new step-state UI machinery for a form whose sections aren't strictly sequential) covering instances/HA guidance, storage + tablespaces, backup, volume snapshots, and bootstrap method, with a live Monaco YAML preview (`src/components/clusters/Create.tsx`).
 - **#8 Bootstrap a cluster from a backup (recovery)** — folded into the same Cluster creation form rather than a separate flow: the `recovery` bootstrap option generates the `externalClusters` entry + `serverName` needed to restore from an `ObjectStore`.
 - **#13 YAML preview in every Create form** — factored into a shared `YamlPreview` component (`src/components/common/YamlPreview.tsx`) and rolled out to Pooler and ObjectStore alongside Cluster; each form now builds its manifest via a plain `build*Manifest()` function shared by the preview and the actual submit call.
+- **#15 Referring Clusters section on the ObjectStore detail page** — `ReferringClustersSection` in `src/components/objectstores/Detail.tsx`, filtering namespace-scoped `Cluster`s via the new `Cluster.referencesObjectStoreAsBackup()`/`referencesObjectStoreAsRecoverySource()` helpers, with separate Backup Destination/Recovery Source columns since a cluster can match both.
 
 ## Suggested implementation order
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-1. **#15 Referring Clusters section on the ObjectStore detail page** — smallest remaining item (one client-side-filtered list, same pattern as `PoolersSection`), no dependencies, and a genuine quick win: answers "is it safe to touch this object store?" before anything below needs to reason about `Backup`/recovery relationships.
-2. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out. Establishes the "Backups" section on the Cluster detail page that #5 builds on.
-3. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form and shares its "Backups" section.
-4. **#16 Database Objects section on the Cluster detail page** — same organizing pattern and Cluster-detail-page work as #4/#5 (new section, client-side-filtered list per CRD), independent CRDs though, so it can slot in right after while that section-layout work is fresh.
-5. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
-6. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
-7. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
+1. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out. Establishes the "Backups" section on the Cluster detail page that #5 builds on.
+2. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form and shares its "Backups" section.
+3. **#16 Database Objects section on the Cluster detail page** — same organizing pattern and Cluster-detail-page work as #4/#5 (new section, client-side-filtered list per CRD), independent CRDs though, so it can slot in right after while that section-layout work is fresh.
+4. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
+5. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
+6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
 
 ## 4. On-demand backups and backup list with status
 
@@ -113,38 +113,6 @@ Open questions to resolve during implementation:
   guidance (e.g. link to install docs) rather than just a red status, consistent with the
   graceful-degradation approach planned for Prometheus (#6) and the Barman Cloud plugin dependency
   in #8.
-
-## 15. Referring Clusters section on the ObjectStore detail page
-
-`ObjectStoreDetail` (`src/components/objectstores/Detail.tsx`) currently only shows the
-`ObjectStore`'s own fields (destination path, endpoint URL, retention policy) — there's no way to
-see which `Cluster`s actually use it. An `ObjectStore` can be referenced two ways, both via
-`spec.plugins[]`/`spec.externalClusters[].plugin` `parameters.barmanObjectName` (see
-`buildClusterManifest()` in `src/components/clusters/Create.tsx`, lines ~85-98 and ~101-118): as a
-**backup destination** (`spec.plugins[].parameters.barmanObjectName`, `isWALArchiver: true`) or as
-a **recovery source** (`spec.externalClusters[].plugin.parameters.barmanObjectName`). Surfacing
-both lists on the ObjectStore detail page would make it much easier to answer "is it safe to
-delete/modify this object store?" and "which clusters restored from this one?".
-
-Open questions to resolve during implementation:
-- Same pattern as `PoolersSection` on `ClusterDetail` (`src/components/clusters/Detail.tsx`,
-  ~lines 221-267): fetch `Cluster.useList({ namespace: objectStore.getNamespace() })` and filter
-  client-side, since there's no server-side index from `ObjectStore` name back to referring
-  `Cluster`s — CNPG doesn't populate `ObjectStore.status` with consumers.
-- Filter/match logic: a cluster references this object store as a backup destination if any
-  `spec.plugins[]` entry has `parameters.barmanObjectName === objectStore.getName()`; as a
-  recovery source if any `spec.externalClusters[].plugin.parameters.barmanObjectName` matches —
-  render as two separate lists (or one list with a Backup/Recovery-source badge per row) since a
-  cluster could plausibly appear in both.
-- Confirm whether `barmanObjectName` references are always same-namespace (assumed throughout the
-  Cluster/ObjectStore forms so far) — if so, the namespace-scoped list above is sufficient; if
-  cross-namespace references turn out to be possible, this would need a cluster-wide `Cluster` list
-  instead, which is a bigger RBAC/perf consideration.
-- Each row should link to the referring `Cluster`'s detail page — per the `ResourceLink` gotcha
-  already documented in `CLAUDE.md`, `<ResourceLink resource={cluster} />` looks up its route by
-  bare `kind` ('Cluster'), not by `Cluster.detailsRoute` (registered under the prefixed name
-  `CnpgClusterDetail`), so this needs the explicit `routeName="CnpgClusterDetail"` prop like the
-  other custom resources in this plugin.
 
 ## 16. Database Objects section on the Cluster detail page
 
