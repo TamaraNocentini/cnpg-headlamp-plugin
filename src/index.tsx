@@ -17,6 +17,8 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
+import { ObjectStoreDetail } from './components/objectstores/Detail';
+import { ObjectStoresList } from './components/objectstores/List';
 import { PoolerDetail } from './components/poolers/Detail';
 import { PoolersList } from './components/poolers/List';
 
@@ -40,6 +42,13 @@ registerSidebarEntry({
   url: '/cnpg/poolers',
   parent: 'CloudNativePG',
   label: 'Poolers',
+});
+
+registerSidebarEntry({
+  name: 'ObjectStores',
+  url: '/cnpg/objectstores',
+  parent: 'CloudNativePG',
+  label: 'ObjectStores',
 });
 
 registerRoute({
@@ -76,4 +85,20 @@ registerRoute({
   name: 'CnpgPoolerDetail',
   exact: true,
   component: () => <PoolerDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/objectstores',
+  sidebar: 'ObjectStores',
+  name: 'CnpgObjectStores',
+  exact: true,
+  component: () => <ObjectStoresList />,
+});
+
+registerRoute({
+  path: '/cnpg/objectstores/:namespace/:name',
+  sidebar: 'ObjectStores',
+  name: 'CnpgObjectStoreDetail',
+  exact: true,
+  component: () => <ObjectStoreDetail />,
 });

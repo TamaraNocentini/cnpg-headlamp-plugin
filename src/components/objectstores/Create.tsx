@@ -1,0 +1,288 @@
+import { Icon } from '@iconify/react';
+import { Activity, K8s } from '@kinvolk/headlamp-plugin/lib';
+import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { useState } from 'react';
+import { ObjectStore, SecretKeyRef } from '../../resources/objectStore';
+import { SecretKeySelector } from '../common/SecretKeySelector';
+
+type S3AuthMethod = 'keys' | 'iamRole';
+type WalCompression = '' | 'bzip2' | 'gzip' | 'lz4' | 'snappy' | 'xz' | 'zstd';
+
+// Backups and WALs, e.g. '30d', '4w', '6m'.
+const RETENTION_POLICY_PATTERN = /^[1-9][0-9]*[dwm]$/;
+
+const emptySecretKeyRef: SecretKeyRef = { name: '', key: '' };
+
+function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
+  const [namespaces] = K8s.ResourceClasses.Namespace.useList();
+  const [namespace, setNamespace] = useState('');
+  const [name, setName] = useState('');
+  const [destinationPath, setDestinationPath] = useState('');
+  const [endpointURL, setEndpointURL] = useState('');
+  const [endpointCA, setEndpointCA] = useState<SecretKeyRef>(emptySecretKeyRef);
+  const [useEndpointCA, setUseEndpointCA] = useState(false);
+  const [authMethod, setAuthMethod] = useState<S3AuthMethod>('keys');
+  const [accessKeyId, setAccessKeyId] = useState<SecretKeyRef>(emptySecretKeyRef);
+  const [secretAccessKey, setSecretAccessKey] = useState<SecretKeyRef>(emptySecretKeyRef);
+  const [region, setRegion] = useState<SecretKeyRef>(emptySecretKeyRef);
+  const [useRegion, setUseRegion] = useState(false);
+  const [retentionPolicy, setRetentionPolicy] = useState('');
+  const [walCompression, setWalCompression] = useState<WalCompression>('');
+  const [walMaxParallel, setWalMaxParallel] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const retentionPolicyValid = !retentionPolicy || RETENTION_POLICY_PATTERN.test(retentionPolicy);
+  const credentialsValid =
+    authMethod === 'iamRole' ||
+    (accessKeyId.name && accessKeyId.key && secretAccessKey.name && secretAccessKey.key);
+  const canSubmit =
+    !!namespace &&
+    !!name &&
+    !!destinationPath &&
+    retentionPolicyValid &&
+    credentialsValid &&
+    !submitting;
+
+  async function handleSubmit() {
+    if (!canSubmit) {
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+
+    const configuration: Record<string, any> = { destinationPath };
+    if (endpointURL) {
+      configuration.endpointURL = endpointURL;
+    }
+    if (useEndpointCA && endpointCA.name && endpointCA.key) {
+      configuration.endpointCA = endpointCA;
+    }
+    if (authMethod === 'iamRole') {
+      configuration.s3Credentials = { inheritFromIAMRole: true };
+    } else {
+      configuration.s3Credentials = { accessKeyId, secretAccessKey };
+      if (useRegion && region.name && region.key) {
+        configuration.s3Credentials.region = region;
+      }
+    }
+    if (walCompression || walMaxParallel) {
+      configuration.wal = {
+        ...(walCompression && { compression: walCompression }),
+        ...(walMaxParallel && { maxParallel: Number(walMaxParallel) }),
+      };
+    }
+
+    const spec: Record<string, any> = { configuration };
+    if (retentionPolicy) {
+      spec.retentionPolicy = retentionPolicy;
+    }
+
+    try {
+      await ObjectStore.apiEndpoint.post({
+        apiVersion: 'barmancloud.cnpg.io/v1',
+        kind: 'ObjectStore',
+        metadata: { name, namespace },
+        spec,
+      });
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create object store');
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <SectionBox title="Create ObjectStore">
+      <FormControl fullWidth margin="normal">
+        <InputLabel id="objectstore-namespace-label">Namespace</InputLabel>
+        <Select
+          labelId="objectstore-namespace-label"
+          label="Namespace"
+          value={namespace}
+          onChange={e => setNamespace(e.target.value)}
+        >
+          {(namespaces ?? []).map(ns => (
+            <MenuItem key={ns.getName()} value={ns.getName()}>
+              {ns.getName()}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Name"
+        value={name}
+        onChange={e => setName(e.target.value)}
+      />
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Destination Path"
+        placeholder="s3://bucket/path/to/folder"
+        value={destinationPath}
+        onChange={e => setDestinationPath(e.target.value)}
+      />
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Endpoint URL"
+        placeholder="https://minio:9000 (leave empty to use AWS S3's default endpoint)"
+        value={endpointURL}
+        onChange={e => setEndpointURL(e.target.value)}
+      />
+
+      <FormControlLabel
+        control={
+          <Checkbox checked={useEndpointCA} onChange={e => setUseEndpointCA(e.target.checked)} />
+        }
+        label="Custom CA certificate for the endpoint (e.g. self-signed Minio cert)"
+      />
+      {useEndpointCA && (
+        <SecretKeySelector
+          idPrefix="objectstore-endpointca"
+          label="Endpoint CA"
+          namespace={namespace}
+          value={endpointCA}
+          onChange={setEndpointCA}
+        />
+      )}
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel id="objectstore-authmethod-label">S3 Authentication</InputLabel>
+        <Select
+          labelId="objectstore-authmethod-label"
+          label="S3 Authentication"
+          value={authMethod}
+          onChange={e => setAuthMethod(e.target.value as S3AuthMethod)}
+        >
+          <MenuItem value="keys">Access Key / Secret Key</MenuItem>
+          <MenuItem value="iamRole">IAM Role (inherit from the instance's role)</MenuItem>
+        </Select>
+      </FormControl>
+
+      {authMethod === 'keys' && (
+        <>
+          <SecretKeySelector
+            idPrefix="objectstore-accesskeyid"
+            label="Access Key ID"
+            namespace={namespace}
+            value={accessKeyId}
+            onChange={setAccessKeyId}
+          />
+          <SecretKeySelector
+            idPrefix="objectstore-secretaccesskey"
+            label="Secret Access Key"
+            namespace={namespace}
+            value={secretAccessKey}
+            onChange={setSecretAccessKey}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox checked={useRegion} onChange={e => setUseRegion(e.target.checked)} />
+            }
+            label="Region"
+          />
+          {useRegion && (
+            <SecretKeySelector
+              idPrefix="objectstore-region"
+              label="Region"
+              namespace={namespace}
+              value={region}
+              onChange={setRegion}
+            />
+          )}
+        </>
+      )}
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="Retention Policy"
+        placeholder="30d"
+        value={retentionPolicy}
+        onChange={e => setRetentionPolicy(e.target.value)}
+        error={!retentionPolicyValid}
+        helperText={
+          retentionPolicyValid
+            ? "Optional. A positive integer followed by 'd', 'w', or 'm' (days/weeks/months)."
+            : "Must match a positive integer followed by 'd', 'w', or 'm', e.g. 30d."
+        }
+      />
+
+      <Typography variant="subtitle1" sx={{ mt: 2 }}>
+        WAL archive tuning (optional)
+      </Typography>
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel id="objectstore-wal-compression-label">WAL Compression</InputLabel>
+        <Select
+          labelId="objectstore-wal-compression-label"
+          label="WAL Compression"
+          value={walCompression}
+          onChange={e => setWalCompression(e.target.value as WalCompression)}
+        >
+          <MenuItem value="">None</MenuItem>
+          <MenuItem value="bzip2">bzip2</MenuItem>
+          <MenuItem value="gzip">gzip</MenuItem>
+          <MenuItem value="lz4">lz4</MenuItem>
+          <MenuItem value="snappy">snappy</MenuItem>
+          <MenuItem value="xz">xz</MenuItem>
+          <MenuItem value="zstd">zstd</MenuItem>
+        </Select>
+      </FormControl>
+
+      <TextField
+        fullWidth
+        margin="normal"
+        label="WAL Max Parallel"
+        type="number"
+        inputProps={{ min: 1 }}
+        value={walMaxParallel}
+        onChange={e => setWalMaxParallel(e.target.value)}
+      />
+
+      {error && (
+        <Typography color="error" sx={{ mt: 2 }}>
+          {error}
+        </Typography>
+      )}
+
+      <Button
+        variant="contained"
+        color="primary"
+        sx={{ mt: 2 }}
+        disabled={!canSubmit}
+        onClick={handleSubmit}
+      >
+        Create
+      </Button>
+    </SectionBox>
+  );
+}
+
+// Opens the create form in an overlay, same convention as launchPoolerCreate in
+// components/poolers/Create.tsx.
+export function launchObjectStoreCreate() {
+  const activityId = 'cnpg-objectstore-create';
+  Activity.launch({
+    id: activityId,
+    title: 'Create ObjectStore',
+    icon: <Icon icon="mdi:plus-circle" width="100%" height="100%" />,
+    location: 'split-right',
+    content: <ObjectStoreCreateForm onClose={() => Activity.close(activityId)} />,
+  });
+}
