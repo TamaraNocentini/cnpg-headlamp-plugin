@@ -18,7 +18,6 @@ Ordered by dependencies first, then easy-and-high-value before harder/riskier or
 
 3. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
 4. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
-5. **#12 Edit PostgreSQL configuration** — independent of the backup work; moderate effort, moderate value.
 6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; higher effort for the payoff versus storage/log visibility.
 7. **#7 Multi-step cluster creation wizard** — highest-effort form work, and deliberately reuses the sync-replication warning and backup (#4/#5) sub-forms, so should come after those exist.
 8. **#8 Bootstrap a cluster from a backup (recovery)** — depends on #7's wizard scaffolding *and* an external Barman Cloud plugin dependency; most moving pieces, so last.
@@ -95,13 +94,3 @@ Open questions to resolve during implementation:
 - PVC capacity/usage isn't available from the `Cluster` CR itself — likely needs `kubectl` PVC objects for capacity plus either Prometheus node/kubelet volume metrics (ties into #6) or `df`-via-exec for actual used space; need to decide which source to rely on and what to do when neither is available.
 - CNPG supports separate WAL and tablespace PVCs per instance (not just the main data volume) — need to show all relevant volumes per instance, not just the primary data PVC.
 - Threshold for "running low" (e.g. percentage-based warning) should probably be configurable rather than hardcoded.
-
-## 12. Edit PostgreSQL configuration
-
-Let users view/edit Postgres configuration parameters (`spec.postgresql.parameters`) through the plugin; CNPG handles applying the change (reload or, when required, a rolling restart) on its own.
-
-Open questions to resolve during implementation:
-- Editing means patching `spec.postgresql.parameters` on the `Cluster` — need `update`/`patch` RBAC on the `Cluster`, let Kubernetes enforce it but surface a clear error.
-- Some parameters are reload-only, others require a restart, and some are outright fixed/rejected by CNPG (it validates against a list of unsupported/managed parameters, e.g. `shared_buffers` handled via `spec.postgresql.shared_buffers` or fixed ones like `listen_addresses`) — worth surfacing that distinction (or at least CNPG's validation error) in the UI rather than presenting all parameters as equally safe to change.
-- Should this be a free-form key/value editor (closest to raw config, least opinionated), or offer curated fields with descriptions/defaults for the most commonly tuned parameters (e.g. `max_connections`, `work_mem`) — leaning toward free-form-plus-search given how many Postgres parameters exist, but worth deciding.
-- Show current effective value (from `status`, if CNPG exposes applied config) alongside the desired `spec` value, so users can see when a change is still pending rollout.
