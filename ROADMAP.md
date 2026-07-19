@@ -12,14 +12,12 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - **#Storage (PVC) visibility and full-disk warnings** — directly extends the health indicator's root-cause story; effort depends on which data source we settle on (PVC objects alone vs. Prometheus/exec).
 - **#Pooler (PgBouncer) visibility** — same CRD-listing pattern as the cluster list, applied to a second resource type; mostly independent.
 - **#14 Custom backup server name in the Cluster creation form** — optional "Server Name" field in the Backup section, defaulting to the cluster's own name when left empty.
+- **#12 Container selector in the log viewer** — a container `Select` (shown only when a pod has more than one) in `PodLogViewer`'s toolbar; switching containers resets the severity/logger filters and re-subscribes to that container's logs. Also covers native sidecars (init containers with `restartPolicy: Always`, e.g. the Barman Cloud plugin's instance sidecar), which live in `spec.initContainers` rather than `spec.containers`, and preserving structured log fields beyond `ts`/`level`/`logger`/`msg` (e.g. `walName`, `elapsedWalTime`) that were previously silently dropped.
 
 ## Suggested implementation order
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-0. **#12 Container selector in the log viewer** — needed now: now that Cluster creation can enable
-   the Barman Cloud plugin (#7/#8, shipped), instance pods can run more than one container, and the
-   log viewer can currently only ever show the first one.
 3. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
 4. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
 6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; higher effort for the payoff versus storage/log visibility.
@@ -124,31 +122,6 @@ Open questions to resolve during implementation:
   guidance (e.g. link to install docs) rather than just a red status, consistent with the
   graceful-degradation approach planned for Prometheus (#6) and the Barman Cloud plugin dependency
   in #8.
-
-## 12. Container selector in the log viewer
-
-`PodLogViewer` (`src/components/common/podActions.tsx`) currently hardcodes
-`const container = pod.spec.containers[0]?.name;` — it only ever shows logs from the pod's first
-container. That was fine while every CNPG instance pod ran a single `postgres` container, but the
-Barman Cloud plugin (now wired up via #7/#8's Cluster creation form) adds a sidecar container to
-instance pods when enabled, and its logs live in that sidecar, not the main container. Needed now,
-not just eventually.
-
-Open questions to resolve during implementation:
-- Add a container `Select` (populated from `pod.spec.containers`, defaulting to the current
-  first-container behavior) to `PodLogViewer`'s `topActions`, alongside the existing
-  severity/logger/search filters.
-- `formatCnpgLogLine`/`parseCnpgLogLine` (`src/resources/cnpgLog.ts`) assume CNPG's structured JSON
-  log format — the plugin sidecar's logs likely aren't in that format, so switching containers
-  probably needs to fall back to showing raw log lines rather than trying to parse everything as a
-  CNPG log line.
-- `pod.getLogs(container, ...)` already takes the container name as a parameter — switching
-  containers just means re-subscribing with a new name; needs care to cancel the previous
-  subscription (the existing `useEffect` cleanup already does this for pod changes, extend the
-  same dependency array to include the selected container).
-- Same gap likely exists whenever backup jobs or other multi-container pods appear elsewhere in
-  the plugin — worth checking `JobsSection`/`InstancesSection` in `src/components/clusters/Detail.tsx`
-  for other spots assuming a single container.
 
 ## 13. YAML preview in every Create form
 

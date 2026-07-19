@@ -30,11 +30,18 @@ export function launchTerminal(pod: Pod) {
 }
 
 function PodLogViewer({ pod, onClose }: { pod: Pod; onClose: () => void }) {
+  // Native sidecars (e.g. the Barman Cloud plugin's instance sidecar) are init containers with
+  // restartPolicy: Always — they run for the pod's whole life like a regular container, but live
+  // in spec.initContainers rather than spec.containers.
+  const containerNames = [
+    ...(pod.spec.initContainers ?? []).map(c => c.name),
+    ...pod.spec.containers.map(c => c.name),
+  ];
   const [rawLogs, setRawLogs] = useState<string[]>([]);
   const [severityFilter, setSeverityFilter] = useState('');
   const [loggerFilter, setLoggerFilter] = useState('');
   const [search, setSearch] = useState('');
-  const container = pod.spec.containers[0]?.name;
+  const [container, setContainer] = useState(containerNames[0]);
 
   useEffect(() => {
     // getLogs mutates and reuses the same array reference on every streamed chunk, so we copy it
@@ -77,6 +84,26 @@ function PodLogViewer({ pod, onClose }: { pod: Pod; onClose: () => void }) {
       downloadName={`${pod.metadata.name}_${container}`}
       onClose={onClose}
       topActions={[
+        ...(containerNames.length > 1
+          ? [
+              <Select
+                key="container"
+                size="small"
+                value={container}
+                onChange={e => {
+                  setContainer(e.target.value);
+                  setSeverityFilter('');
+                  setLoggerFilter('');
+                }}
+              >
+                {containerNames.map(name => (
+                  <MenuItem key={name} value={name}>
+                    {name}
+                  </MenuItem>
+                ))}
+              </Select>,
+            ]
+          : []),
         <TextField
           key="search"
           size="small"
