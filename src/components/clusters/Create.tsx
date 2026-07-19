@@ -1,10 +1,6 @@
 import { Icon } from '@iconify/react';
 import { Activity, K8s } from '@kinvolk/headlamp-plugin/lib';
 import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import Editor from '@monaco-editor/react';
-import Accordion from '@mui/material/Accordion';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import AccordionSummary from '@mui/material/AccordionSummary';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -15,15 +11,14 @@ import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
-import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import yaml from 'js-yaml';
 import { useMemo, useRef, useState } from 'react';
 import { Cluster, StorageConfiguration } from '../../resources/cluster';
 import { ObjectStore } from '../../resources/objectStore';
 import { VolumeSnapshotClass } from '../../resources/volumeSnapshotClass';
 import { StorageSizeClassFields } from '../common/StorageSizeClassFields';
+import { YamlPreview } from '../common/YamlPreview';
 
 const BARMAN_CLOUD_PLUGIN_NAME = 'barman-cloud.cloudnative-pg.io';
 const RECOVERY_EXTERNAL_CLUSTER_NAME = 'recovery-source';
@@ -131,7 +126,6 @@ function buildClusterManifest(state: ClusterFormState) {
 }
 
 function ClusterCreateForm({ onClose }: { onClose: () => void }) {
-  const theme = useTheme();
   const [namespaces] = K8s.ResourceClasses.Namespace.useList();
 
   const [namespace, setNamespace] = useState('');
@@ -197,8 +191,6 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       recoveryObjectStoreName,
     ]
   );
-
-  const manifestYaml = useMemo(() => yaml.dump(manifest), [manifest]);
 
   const tablespacesValid = tablespaces.every(t => t.name && t.storage.size);
   const canSubmit =
@@ -501,26 +493,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         </>
       )}
 
-      <Accordion sx={{ mt: 2 }}>
-        <AccordionSummary expandIcon={<Icon icon="mdi:chevron-down" />}>
-          <Typography>Review YAML</Typography>
-        </AccordionSummary>
-        <AccordionDetails sx={{ p: 0 }}>
-          <Editor
-            height="400px"
-            language="yaml"
-            theme={theme.palette.mode === 'dark' ? 'vs-dark' : 'light'}
-            value={manifestYaml}
-            options={{
-              readOnly: true,
-              minimap: { enabled: false },
-              scrollBeyondLastLine: false,
-              fontSize: 13,
-              automaticLayout: true,
-            }}
-          />
-        </AccordionDetails>
-      </Accordion>
+      <YamlPreview manifest={manifest} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

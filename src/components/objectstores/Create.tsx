@@ -10,9 +10,10 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ObjectStore, SecretKeyRef } from '../../resources/objectStore';
 import { SecretKeySelector } from '../common/SecretKeySelector';
+import { YamlPreview } from '../common/YamlPreview';
 
 type S3AuthMethod = 'keys' | 'iamRole';
 type WalCompression = '' | 'bzip2' | 'gzip' | 'lz4' | 'snappy' | 'xz' | 'zstd';
@@ -21,6 +22,64 @@ type WalCompression = '' | 'bzip2' | 'gzip' | 'lz4' | 'snappy' | 'xz' | 'zstd';
 const RETENTION_POLICY_PATTERN = /^[1-9][0-9]*[dwm]$/;
 
 const emptySecretKeyRef: SecretKeyRef = { name: '', key: '' };
+
+interface ObjectStoreFormState {
+  namespace: string;
+  name: string;
+  destinationPath: string;
+  endpointURL: string;
+  useEndpointCA: boolean;
+  endpointCA: SecretKeyRef;
+  authMethod: S3AuthMethod;
+  accessKeyId: SecretKeyRef;
+  secretAccessKey: SecretKeyRef;
+  useRegion: boolean;
+  region: SecretKeyRef;
+  retentionPolicy: string;
+  walCompression: WalCompression;
+  walMaxParallel: string;
+}
+
+// Builds the ObjectStore manifest from form state — shared by the YAML preview and the actual
+// submit so the two can never drift apart.
+function buildObjectStoreManifest(state: ObjectStoreFormState) {
+  const configuration: Record<string, any> = { destinationPath: state.destinationPath };
+  if (state.endpointURL) {
+    configuration.endpointURL = state.endpointURL;
+  }
+  if (state.useEndpointCA && state.endpointCA.name && state.endpointCA.key) {
+    configuration.endpointCA = state.endpointCA;
+  }
+  if (state.authMethod === 'iamRole') {
+    configuration.s3Credentials = { inheritFromIAMRole: true };
+  } else {
+    configuration.s3Credentials = {
+      accessKeyId: state.accessKeyId,
+      secretAccessKey: state.secretAccessKey,
+    };
+    if (state.useRegion && state.region.name && state.region.key) {
+      configuration.s3Credentials.region = state.region;
+    }
+  }
+  if (state.walCompression || state.walMaxParallel) {
+    configuration.wal = {
+      ...(state.walCompression && { compression: state.walCompression }),
+      ...(state.walMaxParallel && { maxParallel: Number(state.walMaxParallel) }),
+    };
+  }
+
+  const spec: Record<string, any> = { configuration };
+  if (state.retentionPolicy) {
+    spec.retentionPolicy = state.retentionPolicy;
+  }
+
+  return {
+    apiVersion: 'barmancloud.cnpg.io/v1',
+    kind: 'ObjectStore',
+    metadata: { name: state.name, namespace: state.namespace },
+    spec,
+  };
+}
 
 function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
   const [namespaces] = K8s.ResourceClasses.Namespace.useList();
@@ -53,47 +112,50 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
     credentialsValid &&
     !submitting;
 
+  const manifest = useMemo(
+    () =>
+      buildObjectStoreManifest({
+        namespace,
+        name,
+        destinationPath,
+        endpointURL,
+        useEndpointCA,
+        endpointCA,
+        authMethod,
+        accessKeyId,
+        secretAccessKey,
+        useRegion,
+        region,
+        retentionPolicy,
+        walCompression,
+        walMaxParallel,
+      }),
+    [
+      namespace,
+      name,
+      destinationPath,
+      endpointURL,
+      useEndpointCA,
+      endpointCA,
+      authMethod,
+      accessKeyId,
+      secretAccessKey,
+      useRegion,
+      region,
+      retentionPolicy,
+      walCompression,
+      walMaxParallel,
+    ]
+  );
+
   async function handleSubmit() {
     if (!canSubmit) {
       return;
     }
     setSubmitting(true);
     setError(null);
-
-    const configuration: Record<string, any> = { destinationPath };
-    if (endpointURL) {
-      configuration.endpointURL = endpointURL;
-    }
-    if (useEndpointCA && endpointCA.name && endpointCA.key) {
-      configuration.endpointCA = endpointCA;
-    }
-    if (authMethod === 'iamRole') {
-      configuration.s3Credentials = { inheritFromIAMRole: true };
-    } else {
-      configuration.s3Credentials = { accessKeyId, secretAccessKey };
-      if (useRegion && region.name && region.key) {
-        configuration.s3Credentials.region = region;
-      }
-    }
-    if (walCompression || walMaxParallel) {
-      configuration.wal = {
-        ...(walCompression && { compression: walCompression }),
-        ...(walMaxParallel && { maxParallel: Number(walMaxParallel) }),
-      };
-    }
-
-    const spec: Record<string, any> = { configuration };
-    if (retentionPolicy) {
-      spec.retentionPolicy = retentionPolicy;
-    }
-
     try {
-      await ObjectStore.apiEndpoint.post({
-        apiVersion: 'barmancloud.cnpg.io/v1',
-        kind: 'ObjectStore',
-        metadata: { name, namespace },
-        spec,
-      });
+      await ObjectStore.apiEndpoint.post(manifest);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create object store');
@@ -254,6 +316,8 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
         value={walMaxParallel}
         onChange={e => setWalMaxParallel(e.target.value)}
       />
+
+      <YamlPreview manifest={manifest} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

@@ -15,6 +15,7 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - **#12 Container selector in the log viewer** — a container `Select` (shown only when a pod has more than one) in `PodLogViewer`'s toolbar; switching containers resets the severity/logger filters and re-subscribes to that container's logs. Also covers native sidecars (init containers with `restartPolicy: Always`, e.g. the Barman Cloud plugin's instance sidecar), which live in `spec.initContainers` rather than `spec.containers`, and preserving structured log fields beyond `ts`/`level`/`logger`/`msg` (e.g. `walName`, `elapsedWalTime`) that were previously silently dropped.
 - **#7 Cluster creation form** — a single scrollable form rather than a multi-step wizard (matches the Pooler/ObjectStore Create forms' existing pattern, and avoided building new step-state UI machinery for a form whose sections aren't strictly sequential) covering instances/HA guidance, storage + tablespaces, backup, volume snapshots, and bootstrap method, with a live Monaco YAML preview (`src/components/clusters/Create.tsx`).
 - **#8 Bootstrap a cluster from a backup (recovery)** — folded into the same Cluster creation form rather than a separate flow: the `recovery` bootstrap option generates the `externalClusters` entry + `serverName` needed to restore from an `ObjectStore`.
+- **#13 YAML preview in every Create form** — factored into a shared `YamlPreview` component (`src/components/common/YamlPreview.tsx`) and rolled out to Pooler and ObjectStore alongside Cluster; each form now builds its manifest via a plain `build*Manifest()` function shared by the preview and the actual submit call.
 
 ## Suggested implementation order
 
@@ -108,28 +109,6 @@ Open questions to resolve during implementation:
   guidance (e.g. link to install docs) rather than just a red status, consistent with the
   graceful-degradation approach planned for Prometheus (#6) and the Barman Cloud plugin dependency
   in #8.
-
-## 13. YAML preview in every Create form
-
-The Cluster creation form (`src/components/clusters/Create.tsx`) has a collapsible "Review YAML"
-section using a read-only, syntax-highlighted `@monaco-editor/react` editor (the same engine
-Headlamp's own YAML dialogs use), built from a `buildClusterManifest()` function shared with the
-actual submit call so the preview can't drift from what gets applied. It's a big trust win for a
-form this complex — worth bringing to the simpler Pooler and ObjectStore Create forms too
-(`src/components/poolers/Create.tsx`, `src/components/objectstores/Create.tsx`), for consistency
-and because "see exactly what will be created before you click Create" is valuable even for
-smaller forms.
-
-Open questions to resolve during implementation:
-- Factor the Monaco YAML-preview accordion itself into a shared component (e.g.
-  `src/components/common/YamlPreview.tsx` taking a manifest object) rather than copy-pasting the
-  `Accordion`/`Editor`/theme-wiring block three times — the Cluster form's version was written
-  before this was a cross-form pattern.
-- Each form already builds its POST payload inline in `handleSubmit`; refactor each to the same
-  "plain manifest-building function shared by preview and submit" shape `buildClusterManifest`
-  uses, so all three forms guarantee the preview matches what's actually sent.
-- `@monaco-editor/react` and `js-yaml` are already direct dependencies (added for the Cluster
-  form) — no new dependency work needed, just reuse.
 
 ## 15. Referring Clusters section on the ObjectStore detail page
 

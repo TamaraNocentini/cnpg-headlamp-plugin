@@ -8,14 +8,38 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Pooler } from '../../resources/pooler';
+import { YamlPreview } from '../common/YamlPreview';
 
 type PoolerType = 'rw' | 'ro' | 'r';
 // CNPG's pgbouncer pooler only supports session and transaction pooling — statement mode isn't
 // available (it requires protocol-level guarantees pgbouncer can't make for arbitrary clients).
 type PoolMode = 'transaction' | 'session';
+
+interface PoolerFormState {
+  name: string;
+  namespace: string;
+  clusterName: string;
+  type: PoolerType;
+  poolMode: PoolMode;
+}
+
+// Builds the Pooler manifest from form state — shared by the YAML preview and the actual submit
+// so the two can never drift apart.
+function buildPoolerManifest(state: PoolerFormState) {
+  return {
+    apiVersion: 'postgresql.cnpg.io/v1',
+    kind: 'Pooler',
+    metadata: { name: state.name, namespace: state.namespace },
+    spec: {
+      cluster: { name: state.clusterName },
+      type: state.type,
+      pgbouncer: { poolMode: state.poolMode },
+    },
+  };
+}
 
 function PoolerCreateForm({ onClose }: { onClose: () => void }) {
   const [clusters] = Cluster.useList();
@@ -30,24 +54,26 @@ function PoolerCreateForm({ onClose }: { onClose: () => void }) {
     cluster => `${cluster.getNamespace()}/${cluster.getName()}` === clusterKey
   );
 
+  const manifest = useMemo(
+    () =>
+      buildPoolerManifest({
+        name,
+        namespace: selectedCluster?.getNamespace() ?? '',
+        clusterName: selectedCluster?.getName() ?? '',
+        type,
+        poolMode,
+      }),
+    [name, selectedCluster, type, poolMode]
+  );
+
   async function handleSubmit() {
     if (!selectedCluster || !name) {
       return;
     }
     setSubmitting(true);
     setError(null);
-    const namespace = selectedCluster.getNamespace();
     try {
-      await Pooler.apiEndpoint.post({
-        apiVersion: 'postgresql.cnpg.io/v1',
-        kind: 'Pooler',
-        metadata: { name, namespace },
-        spec: {
-          cluster: { name: selectedCluster.getName() },
-          type,
-          pgbouncer: { poolMode },
-        },
-      });
+      await Pooler.apiEndpoint.post(manifest);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create pooler');
@@ -111,6 +137,8 @@ function PoolerCreateForm({ onClose }: { onClose: () => void }) {
           <MenuItem value="session">session</MenuItem>
         </Select>
       </FormControl>
+
+      <YamlPreview manifest={manifest} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>
