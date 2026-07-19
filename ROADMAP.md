@@ -21,9 +21,13 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-3. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
-4. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
-6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; higher effort for the payoff versus storage/log visibility.
+1. **#15 Referring Clusters section on the ObjectStore detail page** — smallest remaining item (one client-side-filtered list, same pattern as `PoolersSection`), no dependencies, and a genuine quick win: answers "is it safe to touch this object store?" before anything below needs to reason about `Backup`/recovery relationships.
+2. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out. Establishes the "Backups" section on the Cluster detail page that #5 builds on.
+3. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form and shares its "Backups" section.
+4. **#16 Database Objects section on the Cluster detail page** — same organizing pattern and Cluster-detail-page work as #4/#5 (new section, client-side-filtered list per CRD), independent CRDs though, so it can slot in right after while that section-layout work is fresh.
+5. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
+6. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
+7. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
 
 ## 4. On-demand backups and backup list with status
 
