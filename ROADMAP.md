@@ -16,6 +16,9 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
+0. **#12 Container selector in the log viewer** — needed now: now that Cluster creation can enable
+   the Barman Cloud plugin (#7/#8, shipped), instance pods can run more than one container, and the
+   log viewer can currently only ever show the first one.
 3. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out.
 4. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form.
 6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; higher effort for the payoff versus storage/log visibility.
@@ -120,3 +123,50 @@ Open questions to resolve during implementation:
   guidance (e.g. link to install docs) rather than just a red status, consistent with the
   graceful-degradation approach planned for Prometheus (#6) and the Barman Cloud plugin dependency
   in #8.
+
+## 12. Container selector in the log viewer
+
+`PodLogViewer` (`src/components/common/podActions.tsx`) currently hardcodes
+`const container = pod.spec.containers[0]?.name;` — it only ever shows logs from the pod's first
+container. That was fine while every CNPG instance pod ran a single `postgres` container, but the
+Barman Cloud plugin (now wired up via #7/#8's Cluster creation form) adds a sidecar container to
+instance pods when enabled, and its logs live in that sidecar, not the main container. Needed now,
+not just eventually.
+
+Open questions to resolve during implementation:
+- Add a container `Select` (populated from `pod.spec.containers`, defaulting to the current
+  first-container behavior) to `PodLogViewer`'s `topActions`, alongside the existing
+  severity/logger/search filters.
+- `formatCnpgLogLine`/`parseCnpgLogLine` (`src/resources/cnpgLog.ts`) assume CNPG's structured JSON
+  log format — the plugin sidecar's logs likely aren't in that format, so switching containers
+  probably needs to fall back to showing raw log lines rather than trying to parse everything as a
+  CNPG log line.
+- `pod.getLogs(container, ...)` already takes the container name as a parameter — switching
+  containers just means re-subscribing with a new name; needs care to cancel the previous
+  subscription (the existing `useEffect` cleanup already does this for pod changes, extend the
+  same dependency array to include the selected container).
+- Same gap likely exists whenever backup jobs or other multi-container pods appear elsewhere in
+  the plugin — worth checking `JobsSection`/`InstancesSection` in `src/components/clusters/Detail.tsx`
+  for other spots assuming a single container.
+
+## 13. YAML preview in every Create form
+
+The Cluster creation form (`src/components/clusters/Create.tsx`) has a collapsible "Review YAML"
+section using a read-only, syntax-highlighted `@monaco-editor/react` editor (the same engine
+Headlamp's own YAML dialogs use), built from a `buildClusterManifest()` function shared with the
+actual submit call so the preview can't drift from what gets applied. It's a big trust win for a
+form this complex — worth bringing to the simpler Pooler and ObjectStore Create forms too
+(`src/components/poolers/Create.tsx`, `src/components/objectstores/Create.tsx`), for consistency
+and because "see exactly what will be created before you click Create" is valuable even for
+smaller forms.
+
+Open questions to resolve during implementation:
+- Factor the Monaco YAML-preview accordion itself into a shared component (e.g.
+  `src/components/common/YamlPreview.tsx` taking a manifest object) rather than copy-pasting the
+  `Accordion`/`Editor`/theme-wiring block three times — the Cluster form's version was written
+  before this was a cross-form pattern.
+- Each form already builds its POST payload inline in `handleSubmit`; refactor each to the same
+  "plain manifest-building function shared by preview and submit" shape `buildClusterManifest`
+  uses, so all three forms guarantee the preview matches what's actually sent.
+- `@monaco-editor/react` and `js-yaml` are already direct dependencies (added for the Cluster
+  form) — no new dependency work needed, just reuse.
