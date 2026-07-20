@@ -22,9 +22,9 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-1. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out. Establishes the "Backups" section on the Cluster detail page that #5 builds on.
-2. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form and shares its "Backups" section.
-3. **#16 Database Objects section on the Cluster detail page** — same organizing pattern and Cluster-detail-page work as #4/#5 (new section, client-side-filtered list per CRD), independent CRDs though, so it can slot in right after while that section-layout work is fresh.
+1. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out. Establishes the top-level Backups list/detail views (with a "Cluster" column, same pattern as Poolers/ObjectStores) that #5 builds on.
+2. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form and shares its top-level list pattern.
+3. **#16 Database Objects section on the Cluster detail page** — a different organizing pattern than #4/#5 (embedded Cluster-detail-page section, not a top-level list — see #16 for why), independent CRDs though, so no ordering dependency on #4/#5.
 4. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
 5. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
 6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
@@ -40,33 +40,37 @@ CRDs" discussion this came out of):
   the underlying data in the object store. Any delete action in the UI must make this explicit
   (e.g. confirmation copy along the lines of "this only removes the request record; the backup
   itself stays in the object store"), so users don't mistake it for actual deletion.
-- Surfaced as a **"Backups" section on the Cluster detail page** (same client-side-filtered-list
-  pattern as `PoolersSection` in `src/components/clusters/Detail.tsx`), not a new top-level sidebar
-  entry or route — `Backup` only makes sense in the context of one `Cluster`, and a 6th CRD in the
-  sidebar (alongside #5's `ScheduledBackup` and #16's four database-object CRDs) would be real
-  navigation clutter for something always reached from a cluster anyway. If cross-cluster
-  visibility (e.g. "every failed backup across all clusters") turns out to matter later, a
-  lightweight top-level list can be layered on afterward without disturbing this structure.
+- Surfaced as a **top-level Backups list/detail view** (`src/components/backups/List.tsx`,
+  `Detail.tsx`), same pattern as `Pooler`/`ObjectStore` — a "Cluster" column with a `ResourceLink`
+  back to the owning cluster (exactly like `PoolersList` already does), rather than a section
+  embedded in the Cluster detail page. Rationale (revisited after initially planning this as a
+  Cluster-detail section): unlike the four CRDs in #16, `Backup`/`ScheduledBackup` aren't
+  Postgres-level database objects — they're Kubernetes-level operational records — so a flat,
+  filterable list of their own is a better fit, and it keeps the already-long Cluster detail page
+  from growing further.
+- Add a lightweight **"View Backups" link/button on the Cluster detail page** (linking to the
+  top-level Backups list pre-filtered to that cluster) so at-a-glance backup status isn't lost by
+  not embedding the full section there.
 
 Open questions to resolve during implementation:
 - Triggering a backup means creating a `Backup` CR (referencing the target `Cluster`) — need to confirm whether to expose backup method/target options (e.g. `spec.method`: `barmanObjectStore` vs `volumeSnapshot`, `spec.target`: `primary`/`prefer-standby`) or just use the cluster's configured defaults.
 - Creating this CR requires `create` RBAC on `backups.postgresql.cnpg.io` in the namespace — let Kubernetes enforce it, but surface a clear error rather than failing silently.
 - Backup list status comes from `status.phase` (`pending`/`running`/`completed`/`failed`) plus `status.startedAt`/`stoppedAt`/`error`.
-- Should `ScheduledBackup` resources (#5) be listed in the same "Backups" section (they're the same lifecycle, just recurring) or a separate sub-section within it?
+- How the "View Backups" link on Cluster detail passes the pre-filter — a query param the Backups list reads on mount, versus just linking to the plain list and letting the user filter manually — needs whatever filtering mechanism `ResourceListView` supports investigated first.
 
 ## 5. Graphical scheduled backup configuration
 
 Let users create/edit `ScheduledBackup` resources through a form (day/time/frequency pickers) instead of hand-writing the cron expression in `spec.schedule`. `ScheduledBackup` doesn't hold backup data itself — it just creates `Backup` CRs (#4) on a schedule — so this is UI sugar over the same underlying mechanism, not a separate concern.
 
 Decisions already made:
-- Same placement as #4: a sub-section of the Cluster detail page's **"Backups" section**, not a separate top-level view — see #4's placement rationale.
+- Same placement as #4: a **top-level ScheduledBackups list/detail view**, not a Cluster-detail-page section — see #4's placement rationale. Likely its own sidebar entry/route, but consider whether it's worth surfacing as a secondary tab/filter on the same Backups list instead of a fully separate page, given how tightly related the two resources are.
 
 Open questions to resolve during implementation:
 - CNPG's `spec.schedule` is a 6-field cron (with seconds) rather than standard 5-field cron — the form needs to build/parse that format correctly, and probably show the generated expression alongside the picker for transparency/trust.
 - Should the form only support common patterns (daily/weekly/monthly at a given time) with an "advanced: raw cron" escape hatch, or try to fully round-trip arbitrary cron expressions back into picker state?
 - Same `spec.method`/`spec.target` options as on-demand backups (#4) apply here — likely want to share that sub-form between the two features.
 - Also covers `spec.suspend` (pause a schedule without deleting it) and `spec.immediate` (run once at creation) — worth exposing as simple toggles.
-- List view: show existing `ScheduledBackup`s per cluster with next-run time (derived from the cron expression) and last outcome, alongside or near the backup list from #4.
+- List view: show existing `ScheduledBackup`s per cluster with next-run time (derived from the cron expression) and last outcome — same "Cluster" column pattern as the Backups list from #4.
 
 ## 6. Basic monitoring via Prometheus metrics
 
@@ -118,22 +122,20 @@ Open questions to resolve during implementation:
 
 CNPG's declarative database-object management adds four more CRDs, all `postgresql.cnpg.io/v1`,
 all namespaced, and each always relating to exactly one `Cluster`: `Database`, `DatabaseRole`,
-`Publication`, `Subscription`. Same organizing question as `Backup`/`ScheduledBackup` (#4/#5), and
-the same answer: rather than four more top-level sidebar entries (on top of the two backup CRDs,
-that's six new CRDs competing for nav space with Clusters/Poolers/ObjectStores), surface them as a
-**"Database Objects" section on the Cluster detail page** — a different section than "Backups"
-(#4/#5), since these are a distinct concern (schema/access management vs. backup lifecycle), not
-because they need a different implementation pattern.
+`Publication`, `Subscription`. Initially grouped with `Backup`/`ScheduledBackup` (#4/#5) under one
+"how do we organize all six Cluster-related CRDs" question — revisited since, with a key
+distinction: `Backup`/`ScheduledBackup` are Kubernetes-level operational records (#4/#5 ship as
+top-level lists), while these four are genuinely **Postgres-level database objects** — they only
+exist and only mean anything in the context of the one `Cluster` whose database they configure. So
+they surface as a **"Database Objects" section on the Cluster detail page** instead, same
+client-side-filtered-list pattern as `PoolersSection`.
 
 Decisions already made:
-- Two sections on Cluster detail, not one: **"Backups"** (`Backup` + `ScheduledBackup`, #4/#5) and
-  **"Database Objects"** (`Database` + `DatabaseRole` + `Publication` + `Subscription`, this item) —
-  grouped by what a user is trying to do (manage backups vs. manage schema/access), not just "every
-  CRD that mentions this cluster" dumped into one place.
-- No new top-level sidebar entries or routes for any of these six CRDs — same rationale as #4: they
-  only make sense in the context of one `Cluster`, so burying discoverability one click into the
-  Cluster detail page is the right trade for now. Revisit only if a cross-cluster view turns out to
-  be needed (e.g. "find every database named X across all clusters").
+- No new top-level sidebar entries or routes for these four CRDs specifically (unlike #4/#5) —
+  they only make sense in the context of one `Cluster`'s live database state, so burying
+  discoverability one click into the Cluster detail page is the right trade for now. Revisit only
+  if a cross-cluster view turns out to be needed (e.g. "find every database named X across all
+  clusters").
 
 Open questions to resolve during implementation:
 - Filtering: unlike `Pooler` (which references its cluster via `spec.cluster.name`, see
@@ -148,7 +150,8 @@ Open questions to resolve during implementation:
   role membership) — decide how much detail to show inline in the section's table vs. requiring a
   drill-down (there's no per-CRD detail page planned here, just a table row, unlike `Backup`).
 - Whether create/edit forms for these four are in scope of this item or a later follow-up — visibility-only first (matching how Pooler/ObjectStore visibility shipped before their Create forms) is likely the right first cut given there are four CRDs to cover at once.
-- Tab/section ordering on the Cluster detail page is getting crowded (Instances, Jobs, Storage,
-  Poolers, Conditions, plus now Backups and Database Objects) — worth a pass on whether some of
-  these should collapse into an overview + drill-down pattern rather than every section rendering
-  inline and expanded by default.
+- The Cluster detail page is already getting long (Instances, Jobs, Storage, Poolers, Referring
+  info, Conditions, and now this section) — undecided yet whether to default less-critical
+  sections (this one included) to a collapsed `Accordion` (reusing the pattern already used for
+  `YamlPreview`) versus a bigger restructure into tabs; resolve this before or alongside
+  implementing this section rather than adding to the page unstyled.
