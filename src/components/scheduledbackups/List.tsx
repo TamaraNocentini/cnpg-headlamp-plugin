@@ -1,0 +1,131 @@
+import {
+  ActionButton,
+  HoverInfoLabel,
+  ResourceListView,
+  StatusLabel,
+} from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import Button from '@mui/material/Button';
+import cronstrue from 'cronstrue';
+import { useLocation } from 'react-router-dom';
+import { ScheduledBackup } from '../../resources/scheduledbackup';
+import { launchScheduledBackupCreate } from './Create';
+import { launchTriggerBackup } from './TriggerBackup';
+
+export function ScheduledBackupSuspendLabel({
+  scheduledBackup,
+}: {
+  scheduledBackup: ScheduledBackup;
+}) {
+  return scheduledBackup.suspend ? (
+    <StatusLabel status="warning">Suspended</StatusLabel>
+  ) : (
+    <StatusLabel status="success">Active</StatusLabel>
+  );
+}
+
+export function ScheduledBackupScheduleLabel({ schedule }: { schedule: string }) {
+  let described = '';
+  try {
+    described = cronstrue.toString(schedule);
+  } catch {
+    // Leave the tooltip empty for expressions cronstrue can't describe.
+  }
+  return <HoverInfoLabel label={schedule} hoverInfo={described} />;
+}
+
+function scheduledBackupColumns(): any[] {
+  return [
+    'name',
+    'namespace',
+    {
+      id: 'cluster',
+      label: 'Cluster',
+      getValue: (item: ScheduledBackup) => item.clusterName,
+    },
+    {
+      id: 'schedule',
+      label: 'Schedule',
+      getValue: (item: ScheduledBackup) => item.schedule,
+      render: (item: ScheduledBackup) => <ScheduledBackupScheduleLabel schedule={item.schedule} />,
+    },
+    {
+      id: 'status',
+      label: 'Status',
+      getValue: (item: ScheduledBackup) => (item.suspend ? 'Suspended' : 'Active'),
+      render: (item: ScheduledBackup) => <ScheduledBackupSuspendLabel scheduledBackup={item} />,
+    },
+    {
+      id: 'lastScheduleTime',
+      label: 'Last Run',
+      getValue: (item: ScheduledBackup) => item.lastScheduleTime ?? '-',
+    },
+    {
+      id: 'nextScheduleTime',
+      label: 'Next Run',
+      getValue: (item: ScheduledBackup) => item.nextScheduleTime ?? '-',
+    },
+    'age',
+    {
+      id: 'actions',
+      label: '',
+      getValue: () => '',
+      render: (item: ScheduledBackup) => (
+        <ActionButton
+          description="Trigger Backup Now"
+          icon="mdi:play-circle-outline"
+          onClick={() => launchTriggerBackup(item)}
+        />
+      ),
+    },
+  ];
+}
+
+export function ScheduledBackupsList() {
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const clusterFilter = params.get('cluster');
+  const namespaceFilter = params.get('namespace');
+
+  // "View Scheduled Backups" on the Cluster detail page links here with ?cluster=&namespace= to
+  // pre-filter — same client-side-filter approach as BackupsList, since ScheduledBackup has no
+  // label back to its cluster.
+  const [allScheduledBackups] = ScheduledBackup.useList({
+    namespace: namespaceFilter ?? undefined,
+  });
+  const filteredScheduledBackups = clusterFilter
+    ? (allScheduledBackups ?? []).filter(item => item.clusterName === clusterFilter)
+    : null;
+
+  const headerProps = {
+    actions: [
+      <Button
+        key="create-scheduled-backup"
+        variant="contained"
+        color="primary"
+        onClick={() => launchScheduledBackupCreate()}
+      >
+        Create Scheduled Backup
+      </Button>,
+    ],
+  };
+
+  if (clusterFilter) {
+    return (
+      <ResourceListView
+        title={`Scheduled Backups for ${clusterFilter}`}
+        data={filteredScheduledBackups}
+        headerProps={headerProps}
+        columns={scheduledBackupColumns()}
+      />
+    );
+  }
+
+  return (
+    <ResourceListView
+      title="Scheduled Backups"
+      resourceClass={ScheduledBackup}
+      headerProps={headerProps}
+      columns={scheduledBackupColumns()}
+    />
+  );
+}

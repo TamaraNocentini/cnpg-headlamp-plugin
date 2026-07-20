@@ -23,6 +23,8 @@ import { ObjectStoreDetail } from './components/objectstores/Detail';
 import { ObjectStoresList } from './components/objectstores/List';
 import { PoolerDetail } from './components/poolers/Detail';
 import { PoolersList } from './components/poolers/List';
+import { ScheduledBackupDetail } from './components/scheduledbackups/Detail';
+import { ScheduledBackupsList } from './components/scheduledbackups/List';
 
 registerSidebarEntry({
   name: 'CloudNativePG',
@@ -58,6 +60,13 @@ registerSidebarEntry({
   url: '/cnpg/backups',
   parent: 'CloudNativePG',
   label: 'Backups',
+});
+
+registerSidebarEntry({
+  name: 'ScheduledBackups',
+  url: '/cnpg/scheduledbackups',
+  parent: 'CloudNativePG',
+  label: 'Scheduled Backups',
 });
 
 registerRoute({
@@ -126,4 +135,20 @@ registerRoute({
   name: 'CnpgBackupDetail',
   exact: true,
   component: () => <BackupDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/scheduledbackups',
+  sidebar: 'ScheduledBackups',
+  name: 'CnpgScheduledBackups',
+  exact: true,
+  component: () => <ScheduledBackupsList />,
+});
+
+registerRoute({
+  path: '/cnpg/scheduledbackups/:namespace/:name',
+  sidebar: 'ScheduledBackups',
+  name: 'CnpgScheduledBackupDetail',
+  exact: true,
+  component: () => <ScheduledBackupDetail />,
 });

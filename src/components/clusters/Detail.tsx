@@ -294,6 +294,16 @@ export function ClusterDetail() {
               )
             }
           />,
+          <ActionButton
+            key="view-scheduled-backups"
+            description="View Scheduled Backups"
+            icon="mdi:calendar-clock"
+            onClick={() =>
+              history.push(
+                `/cnpg/scheduledbackups?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+              )
+            }
+          />,
         ]
       }
       extraInfo={item =>
