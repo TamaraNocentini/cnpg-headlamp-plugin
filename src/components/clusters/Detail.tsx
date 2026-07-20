@@ -9,7 +9,7 @@ import {
   SimpleTable,
   StatusLabel,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { useParams } from 'react-router-dom';
+import { useHistory, useParams } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
 import { Pooler } from '../../resources/pooler';
 import { launchLogs, launchTerminal, Pod, PodPhaseLabel } from '../common/podActions';
@@ -268,6 +268,7 @@ function PoolersSection({ cluster }: { cluster: Cluster }) {
 
 export function ClusterDetail() {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
+  const history = useHistory();
 
   return (
     <DetailsGrid
@@ -282,6 +283,16 @@ export function ClusterDetail() {
             description="Connect"
             icon="mdi:power-plug-outline"
             onClick={() => launchConnectActivity(item)}
+          />,
+          <ActionButton
+            key="view-backups"
+            description="View Backups"
+            icon="mdi:backup-restore"
+            onClick={() =>
+              history.push(
+                `/cnpg/backups?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+              )
+            }
           />,
         ]
       }

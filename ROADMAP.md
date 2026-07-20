@@ -17,46 +17,17 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - **#8 Bootstrap a cluster from a backup (recovery)** — folded into the same Cluster creation form rather than a separate flow: the `recovery` bootstrap option generates the `externalClusters` entry + `serverName` needed to restore from an `ObjectStore`.
 - **#13 YAML preview in every Create form** — factored into a shared `YamlPreview` component (`src/components/common/YamlPreview.tsx`) and rolled out to Pooler and ObjectStore alongside Cluster; each form now builds its manifest via a plain `build*Manifest()` function shared by the preview and the actual submit call.
 - **#15 Referring Clusters section on the ObjectStore detail page** — `ReferringClustersSection` in `src/components/objectstores/Detail.tsx`, filtering namespace-scoped `Cluster`s via the new `Cluster.referencesObjectStoreAsBackup()`/`referencesObjectStoreAsRecoverySource()` helpers, with separate Backup Destination/Recovery Source columns since a cluster can match both.
+- **#4 On-demand backups and backup list with status** — top-level `Backup` list/detail/create views (`src/components/backups/`), plain-text "Cluster" column matching `PoolersList`'s pattern. The Create form exposes a Method choice (`plugin` / `volumeSnapshot`, never the deprecated `barmanObjectStore`) gated on what the selected `Cluster` actually has configured (`spec.plugins` non-empty / `Cluster.volumeSnapshotClassName` set), plus an optional Target override. A "View Backups" `ActionButton` on the Cluster detail page links to `/cnpg/backups?cluster=&namespace=`, which `BackupsList` reads to pre-filter client-side. Note: `Backup` is a *request* — deleting one (via Headlamp's generic delete, which this plugin doesn't customize) does not delete the underlying data in the object store.
 
 ## Suggested implementation order
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-1. **#4 On-demand backups and backup list with status** — moderate effort (create a `Backup` CR, list `status`), doesn't require the Barman Cloud plugin to already be scoped out. Establishes the top-level Backups list/detail views (with a "Cluster" column, same pattern as Poolers/ObjectStores) that #5 builds on.
-2. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form and shares its top-level list pattern.
-3. **#16 Database Objects section on the Cluster detail page** — a different organizing pattern than #4/#5 (embedded Cluster-detail-page section, not a top-level list — see #16 for why), independent CRDs though, so no ordering dependency on #4/#5.
-4. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
-5. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
-6. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
-
-## 4. On-demand backups and backup list with status
-
-Let users trigger an on-demand backup for a cluster, and list existing `Backup` resources with
-their status.
-
-Decisions already made (see #16 for the sibling "how do we organize the rest of the Cluster-related
-CRDs" discussion this came out of):
-- `Backup` is really a **backup request**, not the backup itself — deleting the CR does not delete
-  the underlying data in the object store. Any delete action in the UI must make this explicit
-  (e.g. confirmation copy along the lines of "this only removes the request record; the backup
-  itself stays in the object store"), so users don't mistake it for actual deletion.
-- Surfaced as a **top-level Backups list/detail view** (`src/components/backups/List.tsx`,
-  `Detail.tsx`), same pattern as `Pooler`/`ObjectStore` — a "Cluster" column with a `ResourceLink`
-  back to the owning cluster (exactly like `PoolersList` already does), rather than a section
-  embedded in the Cluster detail page. Rationale (revisited after initially planning this as a
-  Cluster-detail section): unlike the four CRDs in #16, `Backup`/`ScheduledBackup` aren't
-  Postgres-level database objects — they're Kubernetes-level operational records — so a flat,
-  filterable list of their own is a better fit, and it keeps the already-long Cluster detail page
-  from growing further.
-- Add a lightweight **"View Backups" link/button on the Cluster detail page** (linking to the
-  top-level Backups list pre-filtered to that cluster) so at-a-glance backup status isn't lost by
-  not embedding the full section there.
-
-Open questions to resolve during implementation:
-- Triggering a backup means creating a `Backup` CR (referencing the target `Cluster`) — need to confirm whether to expose backup method/target options (e.g. `spec.method`: `barmanObjectStore` vs `volumeSnapshot`, `spec.target`: `primary`/`prefer-standby`) or just use the cluster's configured defaults.
-- Creating this CR requires `create` RBAC on `backups.postgresql.cnpg.io` in the namespace — let Kubernetes enforce it, but surface a clear error rather than failing silently.
-- Backup list status comes from `status.phase` (`pending`/`running`/`completed`/`failed`) plus `status.startedAt`/`stoppedAt`/`error`.
-- How the "View Backups" link on Cluster detail passes the pre-filter — a query param the Backups list reads on mount, versus just linking to the plain list and letting the user filter manually — needs whatever filtering mechanism `ResourceListView` supports investigated first.
+1. **#5 Graphical scheduled backup configuration** — builds directly on #4's method/target sub-form (`src/components/backups/Create.tsx`) and shares its top-level list pattern.
+2. **#16 Database Objects section on the Cluster detail page** — a different organizing pattern than #4/#5 (embedded Cluster-detail-page section, not a top-level list — see #16 for why), independent CRDs though, so no ordering dependency on #4/#5.
+3. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
+4. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
+5. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
 
 ## 5. Graphical scheduled backup configuration
 

@@ -259,6 +259,11 @@ export class Cluster extends KubeObject<CnpgCluster> {
     }
   }
 
+  /** The VolumeSnapshotClass configured for volume-snapshot backups, if any. */
+  get volumeSnapshotClassName(): string | undefined {
+    return this.spec.backup?.volumeSnapshot?.className;
+  }
+
   /** True if this Cluster archives/uploads backups to the given ObjectStore. */
   referencesObjectStoreAsBackup(objectStoreName: string): boolean {
     return (this.spec.plugins ?? []).some(

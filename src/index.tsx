@@ -15,6 +15,8 @@
  */
 
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
+import { BackupDetail } from './components/backups/Detail';
+import { BackupsList } from './components/backups/List';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
 import { ObjectStoreDetail } from './components/objectstores/Detail';
@@ -49,6 +51,13 @@ registerSidebarEntry({
   url: '/cnpg/objectstores',
   parent: 'CloudNativePG',
   label: 'ObjectStores',
+});
+
+registerSidebarEntry({
+  name: 'Backups',
+  url: '/cnpg/backups',
+  parent: 'CloudNativePG',
+  label: 'Backups',
 });
 
 registerRoute({
@@ -101,4 +110,20 @@ registerRoute({
   name: 'CnpgObjectStoreDetail',
   exact: true,
   component: () => <ObjectStoreDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/backups',
+  sidebar: 'Backups',
+  name: 'CnpgBackups',
+  exact: true,
+  component: () => <BackupsList />,
+});
+
+registerRoute({
+  path: '/cnpg/backups/:namespace/:name',
+  sidebar: 'Backups',
+  name: 'CnpgBackupDetail',
+  exact: true,
+  component: () => <BackupDetail />,
 });
