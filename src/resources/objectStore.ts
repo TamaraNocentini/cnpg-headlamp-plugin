@@ -116,4 +116,8 @@ export class ObjectStore extends KubeObject<CnpgObjectStore> {
   get retentionPolicy(): string | undefined {
     return this.spec.retentionPolicy;
   }
+
+  get serverRecoveryWindow() {
+    return this.status.serverRecoveryWindow ?? {};
+  }
 }

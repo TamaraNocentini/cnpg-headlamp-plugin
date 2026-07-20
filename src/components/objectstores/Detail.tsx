@@ -54,6 +54,42 @@ function ReferringClustersSection({ objectStore }: { objectStore: ObjectStore })
   );
 }
 
+function RecoveryWindowSection({ objectStore }: { objectStore: ObjectStore }) {
+  // status.serverRecoveryWindow is a map keyed by server (cluster) name — the Barman Cloud plugin
+  // tracks recovery-window bounds per cluster using this ObjectStore, not per-ObjectStore overall.
+  const entries = Object.entries(objectStore.serverRecoveryWindow);
+
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return (
+    <SectionBox title="Recovery Window">
+      <SimpleTable
+        columns={[
+          {
+            label: 'Cluster',
+            getter: ([serverName]) => serverName,
+          },
+          {
+            label: 'First Recoverability Point',
+            getter: ([, window]) => window.firstRecoverabilityPoint ?? '-',
+          },
+          {
+            label: 'Last Successful Backup',
+            getter: ([, window]) => window.lastSuccessfulBackupTime ?? '-',
+          },
+          {
+            label: 'Last Failed Backup',
+            getter: ([, window]) => window.lastFailedBackupTime ?? '-',
+          },
+        ]}
+        data={entries}
+      />
+    </SectionBox>
+  );
+}
+
 export function ObjectStoreDetail() {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
 
@@ -83,6 +119,10 @@ export function ObjectStoreDetail() {
           {
             id: 'referring-clusters',
             section: <ReferringClustersSection objectStore={item} />,
+          },
+          {
+            id: 'recovery-window',
+            section: <RecoveryWindowSection objectStore={item} />,
           },
         ]
       }
