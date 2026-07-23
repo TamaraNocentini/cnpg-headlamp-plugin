@@ -19,15 +19,15 @@ Backlog of features for the CNPG Headlamp plugin, numbered in the order they wer
 - **#15 Referring Clusters section on the ObjectStore detail page** — `ReferringClustersSection` in `src/components/objectstores/Detail.tsx`, filtering namespace-scoped `Cluster`s via the new `Cluster.referencesObjectStoreAsBackup()`/`referencesObjectStoreAsRecoverySource()` helpers, with separate Backup Destination/Recovery Source columns since a cluster can match both.
 - **#4 On-demand backups and backup list with status** — top-level `Backup` list/detail/create views (`src/components/backups/`), plain-text "Cluster" column matching `PoolersList`'s pattern. The Create form exposes a Method choice (`plugin` / `volumeSnapshot`, never the deprecated `barmanObjectStore`) gated on what the selected `Cluster` actually has configured (`spec.plugins` non-empty / `Cluster.volumeSnapshotClassName` set), plus an optional Target override. A "View Backups" `ActionButton` on the Cluster detail page links to `/cnpg/backups?cluster=&namespace=`, which `BackupsList` reads to pre-filter client-side. Note: `Backup` is a *request* — deleting one (via Headlamp's generic delete, which this plugin doesn't customize) does not delete the underlying data in the object store.
 - **#5 Graphical scheduled backup configuration** — top-level `ScheduledBackup` list/detail/create views (`src/components/scheduledbackups/`), same placement and client-side cluster-filter pattern as #4 (own sidebar entry/route rather than a Backups-list tab, plus a matching "View Scheduled Backups" `ActionButton` on the Cluster detail page). The method/plugin/target sub-form was extracted out of #4's Create form into `src/components/common/BackupMethodFields.tsx` (a `useBackupMethodState` hook + presentational fields) so both Create forms share it verbatim rather than duplicating the cluster-capability-gating logic. The cron picker (`src/components/common/CronScheduleEditor.tsx`) supports Daily/Weekly/Monthly modes that build CNPG's 6-field (seconds-first) `spec.schedule`, plus an "Advanced" raw-text escape hatch for anything else; round-tripping an existing expression back into picker state only recognizes the shapes the editor itself generates (fixed seconds, numeric hour/minute, `*` month) — anything else falls back to Advanced rather than attempting full arbitrary-cron parsing. Uses `cronstrue` (already a transitive dependency of `@kinvolk/headlamp-plugin` via its own `CronJob` list, now declared directly since plugin bundles don't get the host app's transitive deps for free) to show a humanized description next to the raw expression, both in the editor and as a `HoverInfoLabel` tooltip in the list view. Also covers `spec.backupOwnerReference`, `spec.immediate`, and `spec.suspend` as form fields/toggles. A "Trigger Backup Now" `ActionButton` (on the detail page and as a list row action, `src/components/scheduledbackups/TriggerBackup.tsx`) creates a one-off `Backup` by copying the `ScheduledBackup`'s cluster/method/target/pluginConfiguration — no schedule involved, just a manifest-preview confirmation overlay before posting, same convention as the Create forms.
+- **#16 Database Objects: `Database`, `DatabaseRole`, `Publication`, `Subscription`** — shipped as full top-level list/detail/create views (own sidebar entry/route each, `src/components/databases/`, `src/components/databaseroles/`, `src/components/publications/`, `src/components/subscriptions/`), **not** the embedded Cluster-detail-page section originally planned below. Deviated once Poolers/Backups/ScheduledBackups had already established the "own sidebar entry + client-side `?cluster=&namespace=` filter + `View X` button on the Cluster detail page" pattern for every other Cluster-scoped CRD in this plugin — treating these four differently (buried in an accordion, no dedicated Create forms) would have been the inconsistent choice, not the consistent one. All four now nest under a "Clusters" sidebar group (`ClustersGroup`) alongside `Clusters` itself, rather than sitting flat at the top level like Poolers/Backups — since unlike those, these four are meaningless without a Cluster context. `Publication`'s create form supports both `allTables` and a repeatable schema/table `objects` editor (with column list and `only`); `Subscription`'s create form picks the publisher from the subscriber Cluster's `spec.externalClusters` when available, falling back to free text otherwise. `Database`/`DatabaseRole`/`Publication`/`Subscription` all surface their `status.applied`/`status.message` reconciliation state via a shared `*AppliedLabel` component per resource, same idea as `PoolerStatusLabel`. Uncovered a plugin-wide bug along the way (routes default to `useClusterURL: true`, so a hand-built `history.push('/cnpg/...')` string 404s — must go through `Router.createRouteURL(routeName)` instead) that also affected the pre-existing Backups/ScheduledBackups `View X` buttons; fixed everywhere at once (see the "Never build a `history.push()` target as a raw literal path string" entry in `CLAUDE.md`).
 
 ## Suggested implementation order
 
 Ordered by dependencies first, then easy-and-high-value before harder/riskier or externally-dependent work.
 
-1. **#16 Database Objects section on the Cluster detail page** — a different organizing pattern than #4/#5 (embedded Cluster-detail-page section, not a top-level list — see #16 for why), independent CRDs though, so no ordering dependency on #4/#5.
-2. **#11 Operator/plugin status overview page** — independent of the above; moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
-3. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
-4. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
+1. **#11 Operator/plugin status overview page** — moderate effort, but high trust value (answers "is CNPG even installed correctly, and is the Barman Cloud plugin present?" before a user tries to use any of the backup/recovery features).
+2. **#10 Storage (PVC) visibility and full-disk warnings** — extends the PVC visibility already shipped in `PvcsSection`; independent, moderate effort.
+3. **#6 Basic monitoring via Prometheus metrics** — optional external dependency (Prometheus must be present) and its own charting integration; highest effort for the payoff versus everything else here, and #10's "running low" threshold could optionally lean on Prometheus volume metrics once this exists, so doing #10 first isn't wasted work either way.
 
 ## 6. Basic monitoring via Prometheus metrics
 
@@ -74,41 +74,3 @@ Open questions to resolve during implementation:
   guidance (e.g. link to install docs) rather than just a red status, consistent with the
   graceful-degradation approach planned for Prometheus (#6) and the Barman Cloud plugin dependency
   in #8.
-
-## 16. Database Objects section on the Cluster detail page
-
-CNPG's declarative database-object management adds four more CRDs, all `postgresql.cnpg.io/v1`,
-all namespaced, and each always relating to exactly one `Cluster`: `Database`, `DatabaseRole`,
-`Publication`, `Subscription`. Initially grouped with `Backup`/`ScheduledBackup` (#4/#5) under one
-"how do we organize all six Cluster-related CRDs" question — revisited since, with a key
-distinction: `Backup`/`ScheduledBackup` are Kubernetes-level operational records (#4/#5 ship as
-top-level lists), while these four are genuinely **Postgres-level database objects** — they only
-exist and only mean anything in the context of the one `Cluster` whose database they configure. So
-they surface as a **"Database Objects" section on the Cluster detail page** instead, same
-client-side-filtered-list pattern as `PoolersSection`.
-
-Decisions already made:
-- No new top-level sidebar entries or routes for these four CRDs specifically (unlike #4/#5) —
-  they only make sense in the context of one `Cluster`'s live database state, so burying
-  discoverability one click into the Cluster detail page is the right trade for now. Revisit only
-  if a cross-cluster view turns out to be needed (e.g. "find every database named X across all
-  clusters").
-
-Open questions to resolve during implementation:
-- Filtering: unlike `Pooler` (which references its cluster via `spec.cluster.name`, see
-  `PoolersSection`), confirm the exact reference field on each of these four CRDs — CNPG's pattern
-  for cluster-scoped declarative objects is usually `spec.cluster.name` too, but verify per-CRD
-  rather than assuming.
-- `Database`/`Publication`/`Subscription` all have a reconciliation `status` (e.g. `applied`,
-  `message`) reflecting whether CNPG successfully applied the declarative object inside Postgres —
-  surface that status the same way `PoolerStatusLabel`/health indicators do elsewhere, since a
-  declarative object silently failing to apply is the main failure mode worth surfacing.
-- `DatabaseRole` can hold sensitive configuration (password secret references, `CONNECTION LIMIT`,
-  role membership) — decide how much detail to show inline in the section's table vs. requiring a
-  drill-down (there's no per-CRD detail page planned here, just a table row, unlike `Backup`).
-- Whether create/edit forms for these four are in scope of this item or a later follow-up — visibility-only first (matching how Pooler/ObjectStore visibility shipped before their Create forms) is likely the right first cut given there are four CRDs to cover at once.
-- The Cluster detail page is already getting long (Instances, Jobs, Storage, Poolers, Referring
-  info, Conditions, and now this section) — undecided yet whether to default less-critical
-  sections (this one included) to a collapsed `Accordion` (reusing the pattern already used for
-  `YamlPreview`) versus a bigger restructure into tabs; resolve this before or alongside
-  implementing this section rather than adding to the page unstyled.
