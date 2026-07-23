@@ -1,7 +1,30 @@
+import { K8s } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { Cluster } from '../../resources/cluster';
+import { PodStatusLabel } from '../common/podActions';
 import { launchClusterCreate } from './Create';
+
+// One compact status pill per instance pod, same renderer used in the Cluster detail page's
+// Instances section (see PodStatusLabel in common/podActions.tsx for why it isn't a direct import
+// of Headlamp's own pod-list status component).
+function InstanceStatusPills({ cluster }: { cluster: Cluster }) {
+  const [pods] = K8s.ResourceClasses.Pod.useList({
+    namespace: cluster.getNamespace(),
+    labelSelector: `cnpg.io/cluster=${cluster.getName()},cnpg.io/podRole=instance`,
+  });
+
+  return (
+    <Box display="flex" flexWrap="wrap" gap={0.5}>
+      {(pods ?? []).map(pod => (
+        <Box key={pod.metadata.uid}>
+          <PodStatusLabel pod={pod} showContainerStatus={false} />
+        </Box>
+      ))}
+    </Box>
+  );
+}
 
 export function ClustersList() {
   return (
@@ -43,6 +66,7 @@ export function ClustersList() {
           id: 'instances',
           label: 'Instances',
           getValue: item => `${item.readyInstances}/${item.instances}`,
+          render: item => <InstanceStatusPills cluster={item} />,
         },
         {
           id: 'synchronousReplication',

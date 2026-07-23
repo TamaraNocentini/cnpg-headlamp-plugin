@@ -35,15 +35,25 @@ import { PublicationDetail } from './components/publications/Detail';
 import { PublicationsList } from './components/publications/List';
 import { ScheduledBackupDetail } from './components/scheduledbackups/Detail';
 import { ScheduledBackupsList } from './components/scheduledbackups/List';
+import { OperatorStatus } from './components/status/OperatorStatus';
 import { SubscriptionDetail } from './components/subscriptions/Detail';
 import { SubscriptionsList } from './components/subscriptions/List';
 
 registerSidebarEntry({
   name: 'CloudNativePG',
-  url: '/cnpg/clusters',
+  // Points at the operator/plugin status overview rather than straight at the cluster list, so
+  // clicking the top-level sidebar entry answers "is CNPG even installed correctly?" first.
+  url: '/cnpg/status',
   icon: 'mdi:database',
   parent: '',
   label: 'CloudNativePG',
+});
+
+registerSidebarEntry({
+  name: 'Status',
+  url: '/cnpg/status',
+  parent: 'CloudNativePG',
+  label: 'Status',
 });
 
 registerSidebarEntry({
@@ -53,7 +63,7 @@ registerSidebarEntry({
   // never expand, so it's pointed straight at the first child's page instead.
   url: '/cnpg/clusters',
   parent: 'CloudNativePG',
-  label: 'Clusters',
+  label: 'Postgres Clusters',
 });
 
 registerSidebarEntry({
@@ -154,6 +164,14 @@ registerSidebarEntry({
   url: '/cnpg/clusterimagecatalogs',
   parent: 'ImageCatalogsGroup',
   label: 'Cluster Image Catalog',
+});
+
+registerRoute({
+  path: '/cnpg/status',
+  sidebar: 'Status',
+  name: 'CnpgStatus',
+  exact: true,
+  component: () => <OperatorStatus />,
 });
 
 registerRoute({

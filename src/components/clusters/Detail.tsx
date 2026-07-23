@@ -12,7 +12,13 @@ import {
 import { useHistory, useParams } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
 import { Pooler } from '../../resources/pooler';
-import { launchLogs, launchTerminal, Pod, PodPhaseLabel } from '../common/podActions';
+import {
+  launchLogs,
+  launchTerminal,
+  Pod,
+  PodPhaseLabel,
+  PodStatusLabel,
+} from '../common/podActions';
 import { PoolerStatusLabel } from '../poolers/List';
 import { launchConnectActivity } from './connect';
 
@@ -89,8 +95,8 @@ function InstancesSection({ cluster }: { cluster: Cluster }) {
             getter: (pod: Pod) => <InstanceRoleLabel pod={pod} />,
           },
           {
-            label: 'Phase',
-            getter: (pod: Pod) => pod.status.phase,
+            label: 'Status',
+            getter: (pod: Pod) => <PodStatusLabel pod={pod} />,
           },
           {
             label: 'Timeline',
