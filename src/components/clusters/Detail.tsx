@@ -292,7 +292,7 @@ export function ClusterDetail() {
             icon="mdi:database-outline"
             onClick={() =>
               history.push(
-                `/cnpg/databases?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL('CnpgDatabases')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
@@ -312,7 +312,7 @@ export function ClusterDetail() {
             icon="mdi:backup-restore"
             onClick={() =>
               history.push(
-                `/cnpg/backups?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL('CnpgBackups')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
@@ -322,7 +322,7 @@ export function ClusterDetail() {
             icon="mdi:calendar-clock"
             onClick={() =>
               history.push(
-                `/cnpg/scheduledbackups?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL('CnpgScheduledBackups')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
