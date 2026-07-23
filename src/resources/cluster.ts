@@ -48,6 +48,19 @@ export interface ExternalClusterConfiguration {
   plugin: PluginConfiguration;
 }
 
+/**
+ * spec.imageCatalogRef — picks a PostgreSQL major version out of an (Cluster)ImageCatalog.
+ * apiGroup is required by the CRD (rejected as invalid if omitted) despite kubectl explain not
+ * marking it so — always 'postgresql.cnpg.io' in practice, since ImageCatalog/ClusterImageCatalog
+ * are the only kinds this field can reference.
+ */
+export interface ImageCatalogRef {
+  apiGroup: string;
+  kind: 'ImageCatalog' | 'ClusterImageCatalog';
+  name: string;
+  major: number;
+}
+
 export interface CnpgCluster extends KubeObjectInterface {
   spec: {
     instances: number;
@@ -76,6 +89,8 @@ export interface CnpgCluster extends KubeObjectInterface {
       [otherProps: string]: any;
     };
     externalClusters?: ExternalClusterConfiguration[];
+    imageName?: string;
+    imageCatalogRef?: ImageCatalogRef;
     [otherProps: string]: any;
   };
   status?: {
@@ -276,5 +291,14 @@ export class Cluster extends KubeObject<CnpgCluster> {
     return (this.spec.externalClusters ?? []).some(
       external => external.plugin?.parameters?.barmanObjectName === objectStoreName
     );
+  }
+
+  get imageCatalogRef(): ImageCatalogRef | undefined {
+    return this.spec.imageCatalogRef;
+  }
+
+  /** True if this Cluster picks its PostgreSQL image from the given (Cluster)ImageCatalog. */
+  referencesImageCatalog(catalogKind: 'ImageCatalog' | 'ClusterImageCatalog', name: string): boolean {
+    return this.imageCatalogRef?.kind === catalogKind && this.imageCatalogRef?.name === name;
   }
 }

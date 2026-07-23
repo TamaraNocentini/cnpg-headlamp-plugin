@@ -17,8 +17,12 @@
 import { registerRoute, registerSidebarEntry } from '@kinvolk/headlamp-plugin/lib';
 import { BackupDetail } from './components/backups/Detail';
 import { BackupsList } from './components/backups/List';
+import { ClusterImageCatalogDetail } from './components/clusterimagecatalogs/Detail';
+import { ClusterImageCatalogsList } from './components/clusterimagecatalogs/List';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
+import { ImageCatalogDetail } from './components/imagecatalogs/Detail';
+import { ImageCatalogsList } from './components/imagecatalogs/List';
 import { ObjectStoreDetail } from './components/objectstores/Detail';
 import { ObjectStoresList } from './components/objectstores/List';
 import { PoolerDetail } from './components/poolers/Detail';
@@ -67,6 +71,33 @@ registerSidebarEntry({
   url: '/cnpg/scheduledbackups',
   parent: 'CloudNativePG',
   label: 'Scheduled Backups',
+});
+
+registerSidebarEntry({
+  name: 'ImageCatalogsGroup',
+  // Without an explicit url, Headlamp's SidebarItem falls back to resolving a route named after
+  // this entry (or its first child's sidebar-entry name), not the actual registered route name —
+  // and our routes are deliberately prefixed (e.g. 'CnpgImageCatalogs', see CLAUDE.md) to dodge
+  // naming collisions, so that fallback resolves to nothing and the group becomes an inert link
+  // that never expands. Pointing it straight at the first child's page, like the top-level
+  // 'CloudNativePG' entry does, fixes both problems at once.
+  url: '/cnpg/imagecatalogs',
+  parent: 'CloudNativePG',
+  label: 'Image Catalogs',
+});
+
+registerSidebarEntry({
+  name: 'ImageCatalogs',
+  url: '/cnpg/imagecatalogs',
+  parent: 'ImageCatalogsGroup',
+  label: 'Image Catalog',
+});
+
+registerSidebarEntry({
+  name: 'ClusterImageCatalogs',
+  url: '/cnpg/clusterimagecatalogs',
+  parent: 'ImageCatalogsGroup',
+  label: 'Cluster Image Catalog',
 });
 
 registerRoute({
@@ -151,4 +182,38 @@ registerRoute({
   name: 'CnpgScheduledBackupDetail',
   exact: true,
   component: () => <ScheduledBackupDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/imagecatalogs',
+  sidebar: 'ImageCatalogs',
+  name: 'CnpgImageCatalogs',
+  exact: true,
+  component: () => <ImageCatalogsList />,
+});
+
+registerRoute({
+  path: '/cnpg/imagecatalogs/:namespace/:name',
+  sidebar: 'ImageCatalogs',
+  name: 'CnpgImageCatalogDetail',
+  exact: true,
+  component: () => <ImageCatalogDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/clusterimagecatalogs',
+  sidebar: 'ClusterImageCatalogs',
+  name: 'CnpgClusterImageCatalogs',
+  exact: true,
+  component: () => <ClusterImageCatalogsList />,
+});
+
+// Cluster-scoped, so this route has no :namespace segment — same pattern as ClusterIssuer in the
+// official cert-manager plugin.
+registerRoute({
+  path: '/cnpg/clusterimagecatalogs/:name',
+  sidebar: 'ClusterImageCatalogs',
+  name: 'CnpgClusterImageCatalogDetail',
+  exact: true,
+  component: () => <ClusterImageCatalogDetail />,
 });

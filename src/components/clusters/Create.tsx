@@ -15,6 +15,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMemo, useRef, useState } from 'react';
 import { Cluster, StorageConfiguration } from '../../resources/cluster';
+import { ClusterImageCatalog, ImageCatalog } from '../../resources/imageCatalog';
 import { ObjectStore } from '../../resources/objectStore';
 import { VolumeSnapshotClass } from '../../resources/volumeSnapshotClass';
 import { StorageSizeClassFields } from '../common/StorageSizeClassFields';
@@ -24,6 +25,12 @@ const BARMAN_CLOUD_PLUGIN_NAME = 'barman-cloud.cloudnative-pg.io';
 const RECOVERY_EXTERNAL_CLUSTER_NAME = 'recovery-source';
 
 type BootstrapMethod = 'initdb' | 'recovery';
+
+// The operator rejects a Cluster that sets both imageName and imageCatalogRef, so the form treats
+// "how is the PostgreSQL image picked" as one mutually-exclusive choice rather than two
+// independent optional fields.
+type ImageSource = 'default' | 'imageName' | 'catalog';
+type CatalogKind = 'ImageCatalog' | 'ClusterImageCatalog';
 
 interface TablespaceRow {
   id: string;
@@ -36,6 +43,11 @@ interface ClusterFormState {
   namespace: string;
   name: string;
   instances: string;
+  imageSource: ImageSource;
+  imageName: string;
+  imageCatalogKind: CatalogKind;
+  imageCatalogName: string;
+  imageCatalogMajor: string;
   storage: StorageConfiguration;
   useWalStorage: boolean;
   walStorage: StorageConfiguration;
@@ -63,6 +75,17 @@ function buildClusterManifest(state: ClusterFormState) {
   if (instances > 1) {
     spec.postgresql = {
       synchronous: { method: 'any', number: 1, dataDurability: 'required' },
+    };
+  }
+
+  if (state.imageSource === 'imageName' && state.imageName) {
+    spec.imageName = state.imageName;
+  } else if (state.imageSource === 'catalog' && state.imageCatalogName && state.imageCatalogMajor) {
+    spec.imageCatalogRef = {
+      apiGroup: 'postgresql.cnpg.io',
+      kind: state.imageCatalogKind,
+      name: state.imageCatalogName,
+      major: Number(state.imageCatalogMajor),
     };
   }
 
@@ -131,6 +154,11 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
   const [namespace, setNamespace] = useState('');
   const [name, setName] = useState('');
   const [instances, setInstances] = useState('3');
+  const [imageSource, setImageSource] = useState<ImageSource>('default');
+  const [imageName, setImageName] = useState('');
+  const [imageCatalogKind, setImageCatalogKind] = useState<CatalogKind>('ClusterImageCatalog');
+  const [imageCatalogName, setImageCatalogName] = useState('');
+  const [imageCatalogMajor, setImageCatalogMajor] = useState('');
   const [storage, setStorage] = useState<StorageConfiguration>({ size: '1Gi' });
   const [useWalStorage, setUseWalStorage] = useState(false);
   const [walStorage, setWalStorage] = useState<StorageConfiguration>({ size: '1Gi' });
@@ -150,6 +178,13 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
 
   const [objectStores] = ObjectStore.useList({ namespace });
   const [snapshotClasses] = VolumeSnapshotClass.useList();
+  const [imageCatalogs] = ImageCatalog.useList({ namespace });
+  const [clusterImageCatalogs] = ClusterImageCatalog.useList();
+  const imageCatalogChoices =
+    imageCatalogKind === 'ImageCatalog' ? imageCatalogs : clusterImageCatalogs;
+  const selectedImageCatalog = imageCatalogChoices?.find(
+    catalog => catalog.getName() === imageCatalogName
+  );
 
   const instancesNumber = Number(instances) || 0;
 
@@ -157,6 +192,11 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
     namespace,
     name,
     instances,
+    imageSource,
+    imageName,
+    imageCatalogKind,
+    imageCatalogName,
+    imageCatalogMajor,
     storage,
     useWalStorage,
     walStorage,
@@ -177,6 +217,11 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       namespace,
       name,
       instances,
+      imageSource,
+      imageName,
+      imageCatalogKind,
+      imageCatalogName,
+      imageCatalogMajor,
       storage,
       useWalStorage,
       walStorage,
@@ -193,10 +238,15 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
   );
 
   const tablespacesValid = tablespaces.every(t => t.name && t.storage.size);
+  const imageValid =
+    imageSource === 'default' ||
+    (imageSource === 'imageName' && !!imageName) ||
+    (imageSource === 'catalog' && !!imageCatalogName && !!imageCatalogMajor);
   const canSubmit =
     !!namespace &&
     !!name &&
     instancesNumber >= 1 &&
+    imageValid &&
     !!storage.size &&
     (!useWalStorage || !!walStorage.size) &&
     tablespacesValid &&
@@ -292,6 +342,92 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         <Alert severity="info" sx={{ mt: 1 }}>
           Synchronous replication will be enabled automatically for this instance count.
         </Alert>
+      )}
+
+      <Typography variant="subtitle1" sx={{ mt: 2 }}>
+        PostgreSQL Image (optional)
+      </Typography>
+
+      <FormControl fullWidth margin="normal">
+        <InputLabel id="cluster-imagesource-label">Image Source</InputLabel>
+        <Select
+          labelId="cluster-imagesource-label"
+          label="Image Source"
+          value={imageSource}
+          onChange={e => setImageSource(e.target.value as ImageSource)}
+        >
+          <MenuItem value="default">Operator default</MenuItem>
+          <MenuItem value="catalog">Image Catalog</MenuItem>
+          <MenuItem value="imageName">Image Name</MenuItem>
+        </Select>
+      </FormControl>
+
+      {imageSource === 'imageName' && (
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Image Name"
+          placeholder="ghcr.io/cloudnative-pg/postgresql:17.0"
+          value={imageName}
+          onChange={e => setImageName(e.target.value)}
+        />
+      )}
+
+      {imageSource === 'catalog' && (
+        <>
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="cluster-imagecatalogkind-label">Catalog Kind</InputLabel>
+            <Select
+              labelId="cluster-imagecatalogkind-label"
+              label="Catalog Kind"
+              value={imageCatalogKind}
+              onChange={e => {
+                setImageCatalogKind(e.target.value as CatalogKind);
+                setImageCatalogName('');
+                setImageCatalogMajor('');
+              }}
+            >
+              <MenuItem value="ClusterImageCatalog">ClusterImageCatalog (cluster-wide)</MenuItem>
+              <MenuItem value="ImageCatalog">ImageCatalog (this namespace)</MenuItem>
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="cluster-imagecatalogname-label">Catalog</InputLabel>
+            <Select
+              labelId="cluster-imagecatalogname-label"
+              label="Catalog"
+              value={imageCatalogName}
+              onChange={e => {
+                setImageCatalogName(e.target.value);
+                setImageCatalogMajor('');
+              }}
+            >
+              {(imageCatalogChoices ?? []).map(catalog => (
+                <MenuItem key={catalog.getName()} value={catalog.getName()}>
+                  {catalog.getName()}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <FormControl fullWidth margin="normal">
+            <InputLabel id="cluster-imagecatalogmajor-label">Major Version</InputLabel>
+            <Select
+              labelId="cluster-imagecatalogmajor-label"
+              label="Major Version"
+              value={imageCatalogMajor}
+              disabled={!selectedImageCatalog}
+              onChange={e => setImageCatalogMajor(e.target.value)}
+            >
+              {(selectedImageCatalog?.images ?? []).map(entry => (
+                <MenuItem key={entry.major} value={String(entry.major)}>
+                  {entry.major} ({entry.image})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </>
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
