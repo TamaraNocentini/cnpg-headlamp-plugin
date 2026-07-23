@@ -60,16 +60,26 @@ registerSidebarEntry({
 });
 
 registerSidebarEntry({
-  name: 'Backups',
+  name: 'BackupsGroup',
+  // See the equivalent comment on ImageCatalogsGroup below: without an explicit url this group
+  // link would resolve to nothing (its name/first-child-name isn't a registered route name) and
+  // never expand, so it's pointed straight at the first child's page instead.
   url: '/cnpg/backups',
   parent: 'CloudNativePG',
   label: 'Backups',
 });
 
 registerSidebarEntry({
+  name: 'Backups',
+  url: '/cnpg/backups',
+  parent: 'BackupsGroup',
+  label: 'Backups',
+});
+
+registerSidebarEntry({
   name: 'ScheduledBackups',
   url: '/cnpg/scheduledbackups',
-  parent: 'CloudNativePG',
+  parent: 'BackupsGroup',
   label: 'Scheduled Backups',
 });
 
