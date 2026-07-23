@@ -10,6 +10,8 @@ This is a freshly scaffolded [Headlamp](https://headlamp.dev/) plugin (via `@kin
 
 Run all commands from the repo root (there is no monorepo/workspace nesting).
 
+Node/npm are managed via `mise` — they aren't on `PATH` by default, so use `mise exec -- <cmd>` (or a shell with mise activated) rather than bare `node`/`npm`/`npx`.
+
 - `npm start` — start the dev build in watch mode (load the built plugin into a running Headlamp instance to see changes)
 - `npm run build` — production build
 - `npm run tsc` — TypeScript type checking (no separate `tsconfig` targets; single `tsconfig.json` extends the shared Headlamp plugin config)

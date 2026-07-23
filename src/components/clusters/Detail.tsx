@@ -285,6 +285,16 @@ export function ClusterDetail() {
             onClick={() => launchConnectActivity(item)}
           />,
           <ActionButton
+            key="view-databases"
+            description="View Databases"
+            icon="mdi:database-outline"
+            onClick={() =>
+              history.push(
+                `/cnpg/databases?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+              )
+            }
+          />,
+          <ActionButton
             key="view-backups"
             description="View Backups"
             icon="mdi:backup-restore"

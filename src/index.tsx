@@ -21,6 +21,8 @@ import { ClusterImageCatalogDetail } from './components/clusterimagecatalogs/Det
 import { ClusterImageCatalogsList } from './components/clusterimagecatalogs/List';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
+import { DatabaseDetail } from './components/databases/Detail';
+import { DatabasesList } from './components/databases/List';
 import { ImageCatalogDetail } from './components/imagecatalogs/Detail';
 import { ImageCatalogsList } from './components/imagecatalogs/List';
 import { ObjectStoreDetail } from './components/objectstores/Detail';
@@ -39,10 +41,27 @@ registerSidebarEntry({
 });
 
 registerSidebarEntry({
-  name: 'Clusters',
+  name: 'ClustersGroup',
+  // See the equivalent comment on ImageCatalogsGroup below: without an explicit url this group
+  // link would resolve to nothing (its name/first-child-name isn't a registered route name) and
+  // never expand, so it's pointed straight at the first child's page instead.
   url: '/cnpg/clusters',
   parent: 'CloudNativePG',
   label: 'Clusters',
+});
+
+registerSidebarEntry({
+  name: 'Clusters',
+  url: '/cnpg/clusters',
+  parent: 'ClustersGroup',
+  label: 'Clusters',
+});
+
+registerSidebarEntry({
+  name: 'Databases',
+  url: '/cnpg/databases',
+  parent: 'ClustersGroup',
+  label: 'Databases',
 });
 
 registerSidebarEntry({
@@ -128,6 +147,22 @@ registerRoute({
   name: 'CnpgClusterDetail',
   exact: true,
   component: () => <ClusterDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/databases',
+  sidebar: 'Databases',
+  name: 'CnpgDatabases',
+  exact: true,
+  component: () => <DatabasesList />,
+});
+
+registerRoute({
+  path: '/cnpg/databases/:namespace/:name',
+  sidebar: 'Databases',
+  name: 'CnpgDatabaseDetail',
+  exact: true,
+  component: () => <DatabaseDetail />,
 });
 
 registerRoute({
