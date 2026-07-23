@@ -298,7 +298,10 @@ export class Cluster extends KubeObject<CnpgCluster> {
   }
 
   /** True if this Cluster picks its PostgreSQL image from the given (Cluster)ImageCatalog. */
-  referencesImageCatalog(catalogKind: 'ImageCatalog' | 'ClusterImageCatalog', name: string): boolean {
+  referencesImageCatalog(
+    catalogKind: 'ImageCatalog' | 'ClusterImageCatalog',
+    name: string
+  ): boolean {
     return this.imageCatalogRef?.kind === catalogKind && this.imageCatalogRef?.name === name;
   }
 }

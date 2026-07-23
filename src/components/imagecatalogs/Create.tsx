@@ -40,8 +40,7 @@ function ImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const imagesValid =
-    images.length > 0 && images.every(row => row.major > 0 && !!row.image);
+  const imagesValid = images.length > 0 && images.every(row => row.major > 0 && !!row.image);
   const canSubmit = !!namespace && !!name && imagesValid && !submitting;
 
   const manifest = useMemo(

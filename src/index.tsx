@@ -31,8 +31,12 @@ import { ObjectStoreDetail } from './components/objectstores/Detail';
 import { ObjectStoresList } from './components/objectstores/List';
 import { PoolerDetail } from './components/poolers/Detail';
 import { PoolersList } from './components/poolers/List';
+import { PublicationDetail } from './components/publications/Detail';
+import { PublicationsList } from './components/publications/List';
 import { ScheduledBackupDetail } from './components/scheduledbackups/Detail';
 import { ScheduledBackupsList } from './components/scheduledbackups/List';
+import { SubscriptionDetail } from './components/subscriptions/Detail';
+import { SubscriptionsList } from './components/subscriptions/List';
 
 registerSidebarEntry({
   name: 'CloudNativePG',
@@ -71,6 +75,20 @@ registerSidebarEntry({
   url: '/cnpg/databaseroles',
   parent: 'ClustersGroup',
   label: 'Roles',
+});
+
+registerSidebarEntry({
+  name: 'Publications',
+  url: '/cnpg/publications',
+  parent: 'ClustersGroup',
+  label: 'Publications',
+});
+
+registerSidebarEntry({
+  name: 'Subscriptions',
+  url: '/cnpg/subscriptions',
+  parent: 'ClustersGroup',
+  label: 'Subscriptions',
 });
 
 registerSidebarEntry({
@@ -252,6 +270,38 @@ registerRoute({
   name: 'CnpgScheduledBackupDetail',
   exact: true,
   component: () => <ScheduledBackupDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/publications',
+  sidebar: 'Publications',
+  name: 'CnpgPublications',
+  exact: true,
+  component: () => <PublicationsList />,
+});
+
+registerRoute({
+  path: '/cnpg/publications/:namespace/:name',
+  sidebar: 'Publications',
+  name: 'CnpgPublicationDetail',
+  exact: true,
+  component: () => <PublicationDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/subscriptions',
+  sidebar: 'Subscriptions',
+  name: 'CnpgSubscriptions',
+  exact: true,
+  component: () => <SubscriptionsList />,
+});
+
+registerRoute({
+  path: '/cnpg/subscriptions/:namespace/:name',
+  sidebar: 'Subscriptions',
+  name: 'CnpgSubscriptionDetail',
+  exact: true,
+  component: () => <SubscriptionDetail />,
 });
 
 registerRoute({

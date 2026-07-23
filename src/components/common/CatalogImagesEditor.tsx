@@ -33,10 +33,7 @@ export function CatalogImagesEditor({ idPrefix, rows, onChange }: CatalogImagesE
   return (
     <>
       {rows.map(row => (
-        <Box
-          key={row.id}
-          sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}
-        >
+        <Box key={row.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}>
           <TextField
             margin="normal"
             label="Major Version"

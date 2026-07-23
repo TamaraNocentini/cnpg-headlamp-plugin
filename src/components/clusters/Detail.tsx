@@ -292,7 +292,9 @@ export function ClusterDetail() {
             icon="mdi:database-outline"
             onClick={() =>
               history.push(
-                `${createRouteURL('CnpgDatabases')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL(
+                  'CnpgDatabases'
+                )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
@@ -302,7 +304,9 @@ export function ClusterDetail() {
             icon="mdi:account-key-outline"
             onClick={() =>
               history.push(
-                `${createRouteURL('CnpgDatabaseRoles')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL(
+                  'CnpgDatabaseRoles'
+                )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
@@ -312,7 +316,9 @@ export function ClusterDetail() {
             icon="mdi:backup-restore"
             onClick={() =>
               history.push(
-                `${createRouteURL('CnpgBackups')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL(
+                  'CnpgBackups'
+                )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
@@ -322,7 +328,33 @@ export function ClusterDetail() {
             icon="mdi:calendar-clock"
             onClick={() =>
               history.push(
-                `${createRouteURL('CnpgScheduledBackups')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+                `${createRouteURL(
+                  'CnpgScheduledBackups'
+                )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+              )
+            }
+          />,
+          <ActionButton
+            key="view-publications"
+            description="View Publications"
+            icon="mdi:upload-network-outline"
+            onClick={() =>
+              history.push(
+                `${createRouteURL(
+                  'CnpgPublications'
+                )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+              )
+            }
+          />,
+          <ActionButton
+            key="view-subscriptions"
+            description="View Subscriptions"
+            icon="mdi:download-network-outline"
+            onClick={() =>
+              history.push(
+                `${createRouteURL(
+                  'CnpgSubscriptions'
+                )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
