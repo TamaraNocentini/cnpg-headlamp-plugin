@@ -21,6 +21,8 @@ import { ClusterImageCatalogDetail } from './components/clusterimagecatalogs/Det
 import { ClusterImageCatalogsList } from './components/clusterimagecatalogs/List';
 import { ClusterDetail } from './components/clusters/Detail';
 import { ClustersList } from './components/clusters/List';
+import { DatabaseRoleDetail } from './components/databaseroles/Detail';
+import { DatabaseRolesList } from './components/databaseroles/List';
 import { DatabaseDetail } from './components/databases/Detail';
 import { DatabasesList } from './components/databases/List';
 import { ImageCatalogDetail } from './components/imagecatalogs/Detail';
@@ -62,6 +64,13 @@ registerSidebarEntry({
   url: '/cnpg/databases',
   parent: 'ClustersGroup',
   label: 'Databases',
+});
+
+registerSidebarEntry({
+  name: 'DatabaseRoles',
+  url: '/cnpg/databaseroles',
+  parent: 'ClustersGroup',
+  label: 'Roles',
 });
 
 registerSidebarEntry({
@@ -163,6 +172,22 @@ registerRoute({
   name: 'CnpgDatabaseDetail',
   exact: true,
   component: () => <DatabaseDetail />,
+});
+
+registerRoute({
+  path: '/cnpg/databaseroles',
+  sidebar: 'DatabaseRoles',
+  name: 'CnpgDatabaseRoles',
+  exact: true,
+  component: () => <DatabaseRolesList />,
+});
+
+registerRoute({
+  path: '/cnpg/databaseroles/:namespace/:name',
+  sidebar: 'DatabaseRoles',
+  name: 'CnpgDatabaseRoleDetail',
+  exact: true,
+  component: () => <DatabaseRoleDetail />,
 });
 
 registerRoute({

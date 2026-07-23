@@ -1,4 +1,4 @@
-import { K8s } from '@kinvolk/headlamp-plugin/lib';
+import { K8s, Router } from '@kinvolk/headlamp-plugin/lib';
 import {
   ActionButton,
   ConditionsTable,
@@ -15,6 +15,8 @@ import { Pooler } from '../../resources/pooler';
 import { launchLogs, launchTerminal, Pod, PodPhaseLabel } from '../common/podActions';
 import { PoolerStatusLabel } from '../poolers/List';
 import { launchConnectActivity } from './connect';
+
+const { createRouteURL } = Router;
 
 type Pvc = InstanceType<typeof K8s.ResourceClasses.PersistentVolumeClaim>;
 
@@ -291,6 +293,16 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `/cnpg/databases?cluster=${item.getName()}&namespace=${item.getNamespace()}`
+              )
+            }
+          />,
+          <ActionButton
+            key="view-databaseroles"
+            description="View Roles"
+            icon="mdi:account-key-outline"
+            onClick={() =>
+              history.push(
+                `${createRouteURL('CnpgDatabaseRoles')}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
           />,
