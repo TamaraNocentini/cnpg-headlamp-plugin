@@ -53,13 +53,6 @@ registerSidebarEntry({
 });
 
 registerSidebarEntry({
-  name: 'ObjectStores',
-  url: '/cnpg/objectstores',
-  parent: 'CloudNativePG',
-  label: 'ObjectStores',
-});
-
-registerSidebarEntry({
   name: 'BackupsGroup',
   // See the equivalent comment on ImageCatalogsGroup below: without an explicit url this group
   // link would resolve to nothing (its name/first-child-name isn't a registered route name) and
@@ -81,6 +74,13 @@ registerSidebarEntry({
   url: '/cnpg/scheduledbackups',
   parent: 'BackupsGroup',
   label: 'Scheduled Backups',
+});
+
+registerSidebarEntry({
+  name: 'ObjectStores',
+  url: '/cnpg/objectstores',
+  parent: 'BackupsGroup',
+  label: 'Object Stores',
 });
 
 registerSidebarEntry({
