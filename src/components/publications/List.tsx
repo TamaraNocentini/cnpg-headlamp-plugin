@@ -1,8 +1,11 @@
+import { Router } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Publication } from '../../resources/publication';
 import { launchPublicationCreate } from './Create';
+
+const { createRouteURL } = Router;
 
 export function PublicationAppliedLabel({ publication }: { publication: Publication }) {
   if (publication.applied === true) {
@@ -95,6 +98,10 @@ export function PublicationsList() {
     return (
       <ResourceListView
         title={`Publications for ${clusterFilter}`}
+        backLink={createRouteURL('CnpgClusterDetail', {
+          namespace: namespaceFilter,
+          name: clusterFilter,
+        })}
         data={filteredPublications}
         headerProps={headerProps}
         columns={publicationColumns()}

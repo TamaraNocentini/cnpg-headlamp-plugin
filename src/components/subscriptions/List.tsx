@@ -1,8 +1,11 @@
+import { Router } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Subscription } from '../../resources/subscription';
 import { launchSubscriptionCreate } from './Create';
+
+const { createRouteURL } = Router;
 
 export function SubscriptionAppliedLabel({ subscription }: { subscription: Subscription }) {
   if (subscription.applied === true) {
@@ -86,6 +89,10 @@ export function SubscriptionsList() {
     return (
       <ResourceListView
         title={`Subscriptions for ${clusterFilter}`}
+        backLink={createRouteURL('CnpgClusterDetail', {
+          namespace: namespaceFilter,
+          name: clusterFilter,
+        })}
         data={filteredSubscriptions}
         headerProps={headerProps}
         columns={subscriptionColumns()}

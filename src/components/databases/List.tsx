@@ -1,8 +1,11 @@
+import { Router } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Database } from '../../resources/database';
 import { launchDatabaseCreate } from './Create';
+
+const { createRouteURL } = Router;
 
 export function DatabaseAppliedLabel({ database }: { database: Database }) {
   if (database.applied === true) {
@@ -81,6 +84,10 @@ export function DatabasesList() {
     return (
       <ResourceListView
         title={`Databases for ${clusterFilter}`}
+        backLink={createRouteURL('CnpgClusterDetail', {
+          namespace: namespaceFilter,
+          name: clusterFilter,
+        })}
         data={filteredDatabases}
         headerProps={headerProps}
         columns={databaseColumns()}

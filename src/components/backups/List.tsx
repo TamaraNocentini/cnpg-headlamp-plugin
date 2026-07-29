@@ -1,8 +1,11 @@
+import { Router } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Backup } from '../../resources/backup';
 import { launchBackupCreate } from './Create';
+
+const { createRouteURL } = Router;
 
 export function BackupPhaseLabel({ backup }: { backup: Backup }) {
   const phase = backup.phase;
@@ -54,6 +57,10 @@ export function BackupsList() {
     return (
       <ResourceListView
         title={`Backups for ${clusterFilter}`}
+        backLink={createRouteURL('CnpgClusterDetail', {
+          namespace: namespaceFilter,
+          name: clusterFilter,
+        })}
         data={filteredBackups}
         headerProps={headerProps}
         columns={[

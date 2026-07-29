@@ -1,3 +1,4 @@
+import { Router } from '@kinvolk/headlamp-plugin/lib';
 import {
   ActionButton,
   HoverInfoLabel,
@@ -10,6 +11,8 @@ import { useLocation } from 'react-router-dom';
 import { ScheduledBackup } from '../../resources/scheduledbackup';
 import { launchScheduledBackupCreate } from './Create';
 import { launchTriggerBackup } from './TriggerBackup';
+
+const { createRouteURL } = Router;
 
 export function ScheduledBackupSuspendLabel({
   scheduledBackup,
@@ -113,6 +116,10 @@ export function ScheduledBackupsList() {
     return (
       <ResourceListView
         title={`Scheduled Backups for ${clusterFilter}`}
+        backLink={createRouteURL('CnpgClusterDetail', {
+          namespace: namespaceFilter,
+          name: clusterFilter,
+        })}
         data={filteredScheduledBackups}
         headerProps={headerProps}
         columns={scheduledBackupColumns()}

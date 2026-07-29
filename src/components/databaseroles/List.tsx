@@ -1,8 +1,11 @@
+import { Router } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { DatabaseRole } from '../../resources/databaseRole';
 import { launchDatabaseRoleCreate } from './Create';
+
+const { createRouteURL } = Router;
 
 export function DatabaseRoleAppliedLabel({ databaseRole }: { databaseRole: DatabaseRole }) {
   if (databaseRole.applied === true) {
@@ -86,6 +89,10 @@ export function DatabaseRolesList() {
     return (
       <ResourceListView
         title={`Roles for ${clusterFilter}`}
+        backLink={createRouteURL('CnpgClusterDetail', {
+          namespace: namespaceFilter,
+          name: clusterFilter,
+        })}
         data={filteredDatabaseRoles}
         headerProps={headerProps}
         columns={databaseRoleColumns()}
