@@ -243,12 +243,12 @@ function PoolersSection({ cluster }: { cluster: Cluster }) {
           {
             label: 'Name',
             // ResourceLink defaults its route lookup to resource.kind ('Pooler'), but our route
-            // is registered as 'CnpgPoolerDetail' (see index.tsx) to dodge a naming collision —
+            // is registered as 'CNPG Pooler' (see index.tsx) to dodge a naming collision —
             // so the default lookup fails silently and needs this explicit override. Pod/PVC
             // links elsewhere in this file don't need it since those are core Headlamp types
             // whose routes are already registered under their bare kind name.
             getter: (pooler: Pooler) => (
-              <ResourceLink resource={pooler} routeName="CnpgPoolerDetail" />
+              <ResourceLink resource={pooler} routeName="CNPG Pooler" />
             ),
           },
           {
@@ -299,7 +299,7 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `${createRouteURL(
-                  'CnpgDatabases'
+                  'CNPG Databases'
                 )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
@@ -311,7 +311,7 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `${createRouteURL(
-                  'CnpgDatabaseRoles'
+                  'CNPG Database Roles'
                 )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
@@ -323,7 +323,7 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `${createRouteURL(
-                  'CnpgBackups'
+                  'CNPG Backups'
                 )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
@@ -335,7 +335,7 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `${createRouteURL(
-                  'CnpgScheduledBackups'
+                  'CNPG Scheduled Backups'
                 )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
@@ -347,7 +347,7 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `${createRouteURL(
-                  'CnpgPublications'
+                  'CNPG Publications'
                 )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }
@@ -359,7 +359,7 @@ export function ClusterDetail() {
             onClick={() =>
               history.push(
                 `${createRouteURL(
-                  'CnpgSubscriptions'
+                  'CNPG Subscriptions'
                 )}?cluster=${item.getName()}&namespace=${item.getNamespace()}`
               )
             }

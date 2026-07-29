@@ -143,7 +143,7 @@ registerSidebarEntry({
   name: 'ImageCatalogsGroup',
   // Without an explicit url, Headlamp's SidebarItem falls back to resolving a route named after
   // this entry (or its first child's sidebar-entry name), not the actual registered route name —
-  // and our routes are deliberately prefixed (e.g. 'CnpgImageCatalogs', see CLAUDE.md) to dodge
+  // and our routes are deliberately prefixed (e.g. 'CNPG Image Catalogs', see CLAUDE.md) to dodge
   // naming collisions, so that fallback resolves to nothing and the group becomes an inert link
   // that never expands. Pointing it straight at the first child's page, like the top-level
   // 'CloudNativePG' entry does, fixes both problems at once.
@@ -169,7 +169,7 @@ registerSidebarEntry({
 registerRoute({
   path: '/cnpg/status',
   sidebar: 'Status',
-  name: 'CnpgStatus',
+  name: 'CNPG Status',
   exact: true,
   component: () => <OperatorStatus />,
 });
@@ -179,7 +179,7 @@ registerRoute({
   sidebar: 'Clusters',
   // Route "name" must be unique across Headlamp (built-in and plugins) — 'Cluster'/'cluster'
   // collides with Headlamp's own multi-cluster context route, so these are prefixed.
-  name: 'CnpgClusters',
+  name: 'CNPG Clusters',
   // Without this, this route's path can still prefix-match the (longer) detail route's path
   // below, so this list keeps rendering instead of yielding to the detail route.
   exact: true,
@@ -189,7 +189,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/clusters/:namespace/:name',
   sidebar: 'Clusters',
-  name: 'CnpgClusterDetail',
+  name: 'CNPG Cluster',
   exact: true,
   component: () => <ClusterDetail />,
 });
@@ -197,7 +197,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/databases',
   sidebar: 'Databases',
-  name: 'CnpgDatabases',
+  name: 'CNPG Databases',
   exact: true,
   component: () => <DatabasesList />,
 });
@@ -205,7 +205,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/databases/:namespace/:name',
   sidebar: 'Databases',
-  name: 'CnpgDatabaseDetail',
+  name: 'CNPG Database',
   exact: true,
   component: () => <DatabaseDetail />,
 });
@@ -213,7 +213,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/databaseroles',
   sidebar: 'DatabaseRoles',
-  name: 'CnpgDatabaseRoles',
+  name: 'CNPG Database Roles',
   exact: true,
   component: () => <DatabaseRolesList />,
 });
@@ -221,7 +221,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/databaseroles/:namespace/:name',
   sidebar: 'DatabaseRoles',
-  name: 'CnpgDatabaseRoleDetail',
+  name: 'CNPG Database Role',
   exact: true,
   component: () => <DatabaseRoleDetail />,
 });
@@ -229,7 +229,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/poolers',
   sidebar: 'Poolers',
-  name: 'CnpgPoolers',
+  name: 'CNPG Poolers',
   exact: true,
   component: () => <PoolersList />,
 });
@@ -237,7 +237,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/poolers/:namespace/:name',
   sidebar: 'Poolers',
-  name: 'CnpgPoolerDetail',
+  name: 'CNPG Pooler',
   exact: true,
   component: () => <PoolerDetail />,
 });
@@ -245,7 +245,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/objectstores',
   sidebar: 'ObjectStores',
-  name: 'CnpgObjectStores',
+  name: 'CNPG Object Stores',
   exact: true,
   component: () => <ObjectStoresList />,
 });
@@ -253,7 +253,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/objectstores/:namespace/:name',
   sidebar: 'ObjectStores',
-  name: 'CnpgObjectStoreDetail',
+  name: 'CNPG Object Store',
   exact: true,
   component: () => <ObjectStoreDetail />,
 });
@@ -261,7 +261,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/backups',
   sidebar: 'Backups',
-  name: 'CnpgBackups',
+  name: 'CNPG Backups',
   exact: true,
   component: () => <BackupsList />,
 });
@@ -269,7 +269,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/backups/:namespace/:name',
   sidebar: 'Backups',
-  name: 'CnpgBackupDetail',
+  name: 'CNPG Backup',
   exact: true,
   component: () => <BackupDetail />,
 });
@@ -277,7 +277,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/scheduledbackups',
   sidebar: 'ScheduledBackups',
-  name: 'CnpgScheduledBackups',
+  name: 'CNPG Scheduled Backups',
   exact: true,
   component: () => <ScheduledBackupsList />,
 });
@@ -285,7 +285,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/scheduledbackups/:namespace/:name',
   sidebar: 'ScheduledBackups',
-  name: 'CnpgScheduledBackupDetail',
+  name: 'CNPG Scheduled Backup',
   exact: true,
   component: () => <ScheduledBackupDetail />,
 });
@@ -293,7 +293,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/publications',
   sidebar: 'Publications',
-  name: 'CnpgPublications',
+  name: 'CNPG Publications',
   exact: true,
   component: () => <PublicationsList />,
 });
@@ -301,7 +301,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/publications/:namespace/:name',
   sidebar: 'Publications',
-  name: 'CnpgPublicationDetail',
+  name: 'CNPG Publication',
   exact: true,
   component: () => <PublicationDetail />,
 });
@@ -309,7 +309,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/subscriptions',
   sidebar: 'Subscriptions',
-  name: 'CnpgSubscriptions',
+  name: 'CNPG Subscriptions',
   exact: true,
   component: () => <SubscriptionsList />,
 });
@@ -317,7 +317,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/subscriptions/:namespace/:name',
   sidebar: 'Subscriptions',
-  name: 'CnpgSubscriptionDetail',
+  name: 'CNPG Subscription',
   exact: true,
   component: () => <SubscriptionDetail />,
 });
@@ -325,7 +325,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/imagecatalogs',
   sidebar: 'ImageCatalogs',
-  name: 'CnpgImageCatalogs',
+  name: 'CNPG Image Catalogs',
   exact: true,
   component: () => <ImageCatalogsList />,
 });
@@ -333,7 +333,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/imagecatalogs/:namespace/:name',
   sidebar: 'ImageCatalogs',
-  name: 'CnpgImageCatalogDetail',
+  name: 'CNPG Image Catalog',
   exact: true,
   component: () => <ImageCatalogDetail />,
 });
@@ -341,7 +341,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/clusterimagecatalogs',
   sidebar: 'ClusterImageCatalogs',
-  name: 'CnpgClusterImageCatalogs',
+  name: 'CNPG Cluster Image Catalogs',
   exact: true,
   component: () => <ClusterImageCatalogsList />,
 });
@@ -351,7 +351,7 @@ registerRoute({
 registerRoute({
   path: '/cnpg/clusterimagecatalogs/:name',
   sidebar: 'ClusterImageCatalogs',
-  name: 'CnpgClusterImageCatalogDetail',
+  name: 'CNPG Cluster Image Catalog',
   exact: true,
   component: () => <ClusterImageCatalogDetail />,
 });

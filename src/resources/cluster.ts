@@ -150,7 +150,7 @@ export class Cluster extends KubeObject<CnpgCluster> {
     };
   }
 
-  // Returning the raw path (rather than the 'CnpgClusterDetail' route name registered in
+  // Returning the raw path (rather than the 'CNPG Cluster' route name registered in
   // index.tsx) is deliberate: KubeObject.getDetailsLink() -> createRouteURL() falls back to a
   // path-based route lookup and correctly generates the link, whereas the name-based lookup was
   // observed to return an empty string here (breaking navigation) despite matching the

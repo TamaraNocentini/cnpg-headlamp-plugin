@@ -42,10 +42,10 @@ function ReferringClustersSection({ imageCatalog }: { imageCatalog: ImageCatalog
           {
             label: 'Name',
             // ResourceLink defaults its route lookup to resource.kind ('Cluster'), but our route
-            // is registered as 'CnpgClusterDetail' (see index.tsx) — same override as
+            // is registered as 'CNPG Cluster' (see index.tsx) — same override as
             // ReferringClustersSection in objectstores/Detail.tsx.
             getter: (cluster: Cluster) => (
-              <ResourceLink resource={cluster} routeName="CnpgClusterDetail" />
+              <ResourceLink resource={cluster} routeName="CNPG Cluster" />
             ),
           },
           {

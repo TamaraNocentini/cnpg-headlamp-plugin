@@ -57,7 +57,7 @@ export function BackupsList() {
     return (
       <ResourceListView
         title={`Backups for ${clusterFilter}`}
-        backLink={createRouteURL('CnpgClusterDetail', {
+        backLink={createRouteURL('CNPG Cluster', {
           namespace: namespaceFilter,
           name: clusterFilter,
         })}

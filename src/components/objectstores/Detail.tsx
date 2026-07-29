@@ -30,11 +30,11 @@ function ReferringClustersSection({ objectStore }: { objectStore: ObjectStore })
           {
             label: 'Name',
             // ResourceLink defaults its route lookup to resource.kind ('Cluster'), but our route
-            // is registered as 'CnpgClusterDetail' (see index.tsx) to dodge a naming collision —
+            // is registered as 'CNPG Cluster' (see index.tsx) to dodge a naming collision —
             // so the default lookup fails silently and needs this explicit override, same as
             // PoolersSection in clusters/Detail.tsx.
             getter: (cluster: Cluster) => (
-              <ResourceLink resource={cluster} routeName="CnpgClusterDetail" />
+              <ResourceLink resource={cluster} routeName="CNPG Cluster" />
             ),
           },
           {

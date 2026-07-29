@@ -84,7 +84,7 @@ export function DatabasesList() {
     return (
       <ResourceListView
         title={`Databases for ${clusterFilter}`}
-        backLink={createRouteURL('CnpgClusterDetail', {
+        backLink={createRouteURL('CNPG Cluster', {
           namespace: namespaceFilter,
           name: clusterFilter,
         })}

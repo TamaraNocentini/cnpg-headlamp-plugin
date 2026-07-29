@@ -41,7 +41,7 @@ function ReferringClustersSection({ imageCatalog }: { imageCatalog: ClusterImage
           {
             label: 'Name',
             getter: (cluster: Cluster) => (
-              <ResourceLink resource={cluster} routeName="CnpgClusterDetail" />
+              <ResourceLink resource={cluster} routeName="CNPG Cluster" />
             ),
           },
           {

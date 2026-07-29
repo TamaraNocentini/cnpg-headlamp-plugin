@@ -89,7 +89,7 @@ export function SubscriptionsList() {
     return (
       <ResourceListView
         title={`Subscriptions for ${clusterFilter}`}
-        backLink={createRouteURL('CnpgClusterDetail', {
+        backLink={createRouteURL('CNPG Cluster', {
           namespace: namespaceFilter,
           name: clusterFilter,
         })}
