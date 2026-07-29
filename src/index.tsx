@@ -156,14 +156,14 @@ registerSidebarEntry({
   name: 'ImageCatalogs',
   url: '/cnpg/imagecatalogs',
   parent: 'ImageCatalogsGroup',
-  label: 'Image Catalog',
+  label: 'ImageCatalogs',
 });
 
 registerSidebarEntry({
   name: 'ClusterImageCatalogs',
   url: '/cnpg/clusterimagecatalogs',
   parent: 'ImageCatalogsGroup',
-  label: 'Cluster Image Catalog',
+  label: 'ClusterImageCatalogs',
 });
 
 registerRoute({
