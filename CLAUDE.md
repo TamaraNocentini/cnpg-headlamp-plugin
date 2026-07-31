@@ -40,7 +40,7 @@ Since this plugin will target CloudNativePG CRDs, the `official-plugins/cert-man
 
 ### Backups: target the Barman Cloud plugin, not in-tree barman-cloud
 
-CNPG is deprecating its in-tree `barmanObjectStore` integration in favor of the Barman Cloud **plugin** (CNPG plugin interface + `ObjectStore` CR). Any backup/recovery work in this plugin (listing, creating, scheduling, or recovering from backups) should target that plugin-based integration, not the legacy in-tree `spec.backup.barmanObjectStore` / `bootstrap.recovery.backup.barmanObjectStore` fields. See `ROADMAP.md` item 8 for more detail.
+CNPG is deprecating its in-tree `barmanObjectStore` integration in favor of the Barman Cloud **plugin** (CNPG plugin interface + `ObjectStore` CR). Any backup/recovery work in this plugin (listing, creating, scheduling, or recovering from backups) should target that plugin-based integration, not the legacy in-tree `spec.backup.barmanObjectStore` / `bootstrap.recovery.backup.barmanObjectStore` fields.
 
 ## SDK gotchas learned the hard way
 
