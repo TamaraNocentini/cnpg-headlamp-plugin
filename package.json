@@ -13,7 +13,8 @@
     "storybook": "headlamp-plugin storybook",
     "storybook-build": "headlamp-plugin storybook-build",
     "test": "headlamp-plugin test",
-    "i18n": "headlamp-plugin i18n"
+    "i18n": "headlamp-plugin i18n",
+    "slides": "bash scripts/build-slides.sh"
   },
   "keywords": [
     "headlamp",

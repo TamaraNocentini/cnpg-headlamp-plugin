@@ -4,3 +4,4 @@ build/
 *.tar.gz
 .DS_Store
 .eslintcache
+docs/presentation.html
