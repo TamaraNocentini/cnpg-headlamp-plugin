@@ -27,6 +27,21 @@ export interface ParsedLogLine {
 const KNOWN_TOP_LEVEL_KEYS = new Set(['level', 'ts', 'msg', 'logger', 'record', 'logging_pod']);
 const KNOWN_RECORD_KEYS = new Set(['message', 'error_severity']);
 
+/**
+ * pod.getLogs delivers log lines in whatever chunks the underlying stream happens to arrive in —
+ * not necessarily one array entry per newline-terminated log line. A single entry can bundle
+ * several real lines (JSON or not) joined by embedded "\n"s. JSON.parse on such a bundle fails
+ * (trailing data after the first object), so parseCnpgLogLine falls back to treating the whole
+ * bundle as one opaque, uncolored line. Re-split on "\n" first so each real line is parsed (and
+ * colored) individually.
+ */
+export function parseCnpgLogLines(rawLines: string[]): ParsedLogLine[] {
+  return rawLines
+    .flatMap(line => line.split('\n'))
+    .filter(line => line.length > 0)
+    .map(parseCnpgLogLine);
+}
+
 export function parseCnpgLogLine(raw: string): ParsedLogLine {
   try {
     const parsed = JSON.parse(raw);

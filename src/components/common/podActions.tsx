@@ -7,7 +7,7 @@ import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import Tooltip from '@mui/material/Tooltip';
 import { useEffect, useMemo, useState } from 'react';
-import { formatCnpgLogLine, parseCnpgLogLine } from '../../resources/cnpgLog';
+import { formatCnpgLogLine, parseCnpgLogLines } from '../../resources/cnpgLog';
 
 export type Pod = InstanceType<typeof K8s.ResourceClasses.Pod>;
 
@@ -56,7 +56,7 @@ function PodLogViewer({ pod, onClose }: { pod: Pod; onClose: () => void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pod.metadata.uid, container]);
 
-  const parsedLogs = useMemo(() => rawLogs.map(parseCnpgLogLine), [rawLogs]);
+  const parsedLogs = useMemo(() => parseCnpgLogLines(rawLogs), [rawLogs]);
 
   const severities = useMemo(
     () => Array.from(new Set(parsedLogs.map(entry => entry.severity).filter(Boolean))).sort(),
