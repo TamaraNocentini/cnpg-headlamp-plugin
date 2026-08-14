@@ -32,12 +32,15 @@ export function BarmanCloudNotInstalled({ title }: { title: string }) {
 
   return (
     <SectionBox title={title}>
+      {/* severity="warning" renders near-invisible text in Headlamp's dark theme — its
+          palette.warning.light is a translucent color meant for a different component, and
+          MUI's Alert derives its text color from that same value. Headlamp's theme doesn't
+          override palette.info at all, so it falls back to MUI's own (unaffected) default. */}
       <Alert
-        severity="warning"
+        severity="info"
         action={
           <Link
             component="button"
-            color="inherit"
             underline="always"
             sx={{ mr: 1 }}
             onClick={() => history.push(createRouteURL('CNPG Status'))}
