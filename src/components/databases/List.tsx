@@ -68,6 +68,10 @@ export function DatabasesList() {
     : null;
 
   const headerProps = {
+    // ResourceListView auto-injects Headlamp's own generic CreateResourceButton next to the
+    // title whenever resourceClass is set and titleSideActions isn't — suppress it here since
+    // our guided create form below already covers that slot via actions.
+    titleSideActions: [],
     actions: [
       <Button
         key="create-database"
