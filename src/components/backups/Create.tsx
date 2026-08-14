@@ -55,6 +55,10 @@ function BackupCreateForm({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set while the YamlPreview's "Edit" switch is on — takes precedence over the form-derived
+  // manifest below at submit time. See YamlPreview.tsx for why this is an override rather than
+  // something synced back onto the form fields.
+  const [manifestOverride, setManifestOverride] = useState<object | null>(null);
 
   const selectedCluster = clusters?.find(
     cluster => `${cluster.getNamespace()}/${cluster.getName()}` === clusterKey
@@ -90,7 +94,7 @@ function BackupCreateForm({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setError(null);
     try {
-      await Backup.apiEndpoint.post(manifest);
+      await Backup.apiEndpoint.post(manifestOverride ?? manifest);
       enqueueSnackbar(`Created Backup "${manifest.metadata.name}"`, { variant: 'success' });
       onClose();
     } catch (err) {
@@ -131,7 +135,7 @@ function BackupCreateForm({ onClose }: { onClose: () => void }) {
 
       <BackupMethodFields idPrefix="backup" selectedCluster={selectedCluster} state={methodState} />
 
-      <YamlPreview manifest={manifest} />
+      <YamlPreview manifest={manifest} onOverrideChange={setManifestOverride} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

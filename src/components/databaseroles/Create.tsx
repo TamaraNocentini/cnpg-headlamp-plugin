@@ -99,6 +99,10 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
   const [clientCertificate, setClientCertificate] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set while the YamlPreview's "Edit" switch is on — takes precedence over the form-derived
+  // manifest below at submit time. See YamlPreview.tsx for why this is an override rather than
+  // something synced back onto the form fields.
+  const [manifestOverride, setManifestOverride] = useState<object | null>(null);
 
   const selectedCluster = clusters?.find(
     cluster => `${cluster.getNamespace()}/${cluster.getName()}` === clusterKey
@@ -159,7 +163,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setError(null);
     try {
-      await DatabaseRole.apiEndpoint.post(manifest);
+      await DatabaseRole.apiEndpoint.post(manifestOverride ?? manifest);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create role');
@@ -317,7 +321,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
         label="Issue a TLS client certificate for this role (requires Login)"
       />
 
-      <YamlPreview manifest={manifest} />
+      <YamlPreview manifest={manifest} onOverrideChange={setManifestOverride} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

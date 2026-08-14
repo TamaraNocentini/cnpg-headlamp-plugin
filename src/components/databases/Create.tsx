@@ -82,6 +82,10 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
   const [builtinLocale, setBuiltinLocale] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set while the YamlPreview's "Edit" switch is on — takes precedence over the form-derived
+  // manifest below at submit time. See YamlPreview.tsx for why this is an override rather than
+  // something synced back onto the form fields.
+  const [manifestOverride, setManifestOverride] = useState<object | null>(null);
 
   const selectedCluster = clusters?.find(
     cluster => `${cluster.getNamespace()}/${cluster.getName()}` === clusterKey
@@ -125,7 +129,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setError(null);
     try {
-      await Database.apiEndpoint.post(manifest);
+      await Database.apiEndpoint.post(manifestOverride ?? manifest);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create database');
@@ -248,7 +252,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
         />
       )}
 
-      <YamlPreview manifest={manifest} />
+      <YamlPreview manifest={manifest} onOverrideChange={setManifestOverride} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

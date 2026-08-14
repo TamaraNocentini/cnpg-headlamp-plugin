@@ -39,6 +39,10 @@ function ImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
   ]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set while the YamlPreview's "Edit" switch is on — takes precedence over the form-derived
+  // manifest below at submit time. See YamlPreview.tsx for why this is an override rather than
+  // something synced back onto the form fields.
+  const [manifestOverride, setManifestOverride] = useState<object | null>(null);
 
   const imagesValid = images.length > 0 && images.every(row => row.major > 0 && !!row.image);
   const canSubmit = !!namespace && !!name && imagesValid && !submitting;
@@ -55,7 +59,7 @@ function ImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setError(null);
     try {
-      await ImageCatalog.apiEndpoint.post(manifest);
+      await ImageCatalog.apiEndpoint.post(manifestOverride ?? manifest);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create image catalog');
@@ -94,7 +98,7 @@ function ImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
       </Typography>
       <CatalogImagesEditor idPrefix="imagecatalog-image" rows={images} onChange={setImages} />
 
-      <YamlPreview manifest={manifest} />
+      <YamlPreview manifest={manifest} onOverrideChange={setManifestOverride} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>

@@ -173,6 +173,10 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
   const [recoveryObjectStoreName, setRecoveryObjectStoreName] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set while the YamlPreview's "Edit" switch is on — takes precedence over the form-derived
+  // manifest below at submit time. See YamlPreview.tsx for why this is an override rather than
+  // something synced back onto the form fields.
+  const [manifestOverride, setManifestOverride] = useState<object | null>(null);
 
   const tablespaceIdCounter = useRef(0);
 
@@ -283,7 +287,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setError(null);
     try {
-      await Cluster.apiEndpoint.post(manifest);
+      await Cluster.apiEndpoint.post(manifestOverride ?? manifest);
       onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create cluster');
@@ -629,7 +633,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         </>
       )}
 
-      <YamlPreview manifest={manifest} />
+      <YamlPreview manifest={manifest} onOverrideChange={setManifestOverride} />
 
       {error && (
         <Typography color="error" sx={{ mt: 2 }}>
