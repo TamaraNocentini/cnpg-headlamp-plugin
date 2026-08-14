@@ -3,6 +3,7 @@ import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/Comm
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Database } from '../../resources/database';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchDatabaseCreate } from './Create';
 
 const { createRouteURL } = Router;
@@ -73,14 +74,16 @@ export function DatabasesList() {
     // our guided create form below already covers that slot via actions.
     titleSideActions: [],
     actions: [
-      <Button
+      <AuthDisabledButton
         key="create-database"
-        variant="contained"
-        color="primary"
-        onClick={() => launchDatabaseCreate()}
+        item={Database}
+        authVerb="create"
+        deniedMessage="You don't have permission to create Databases."
       >
-        Create Database
-      </Button>,
+        <Button variant="contained" color="primary" onClick={() => launchDatabaseCreate()}>
+          Create Database
+        </Button>
+      </AuthDisabledButton>,
     ],
   };
 

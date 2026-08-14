@@ -3,6 +3,7 @@ import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/Comm
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { Cluster } from '../../resources/cluster';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { PodStatusLabel } from '../common/podActions';
 import { launchClusterCreate } from './Create';
 
@@ -37,14 +38,16 @@ export function ClustersList() {
         // since our guided create form below already covers that slot via actions.
         titleSideActions: [],
         actions: [
-          <Button
+          <AuthDisabledButton
             key="create-cluster"
-            variant="contained"
-            color="primary"
-            onClick={() => launchClusterCreate()}
+            item={Cluster}
+            authVerb="create"
+            deniedMessage="You don't have permission to create Clusters."
           >
-            Create Cluster
-          </Button>,
+            <Button variant="contained" color="primary" onClick={() => launchClusterCreate()}>
+              Create Cluster
+            </Button>
+          </AuthDisabledButton>,
         ],
       }}
       columns={[

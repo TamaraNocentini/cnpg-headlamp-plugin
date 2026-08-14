@@ -1,6 +1,7 @@
 import { ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { ObjectStore } from '../../resources/objectStore';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { BarmanCloudNotInstalled, useBarmanCloudCrdInstalled } from '../common/barmanCloud';
 import { launchObjectStoreCreate } from './Create';
 
@@ -23,14 +24,16 @@ export function ObjectStoresList() {
         // since our guided create form below already covers that slot via actions.
         titleSideActions: [],
         actions: [
-          <Button
+          <AuthDisabledButton
             key="create-objectstore"
-            variant="contained"
-            color="primary"
-            onClick={() => launchObjectStoreCreate()}
+            item={ObjectStore}
+            authVerb="create"
+            deniedMessage="You don't have permission to create ObjectStores."
           >
-            Create ObjectStore
-          </Button>,
+            <Button variant="contained" color="primary" onClick={() => launchObjectStoreCreate()}>
+              Create ObjectStore
+            </Button>
+          </AuthDisabledButton>,
         ],
       }}
       columns={[

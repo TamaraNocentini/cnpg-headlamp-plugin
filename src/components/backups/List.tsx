@@ -3,6 +3,7 @@ import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/Comm
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Backup } from '../../resources/backup';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchBackupCreate } from './Create';
 
 const { createRouteURL } = Router;
@@ -46,14 +47,16 @@ export function BackupsList() {
     // our guided create form below already covers that slot via actions.
     titleSideActions: [],
     actions: [
-      <Button
+      <AuthDisabledButton
         key="create-backup"
-        variant="contained"
-        color="primary"
-        onClick={() => launchBackupCreate()}
+        item={Backup}
+        authVerb="create"
+        deniedMessage="You don't have permission to create Backups."
       >
-        Create Backup
-      </Button>,
+        <Button variant="contained" color="primary" onClick={() => launchBackupCreate()}>
+          Create Backup
+        </Button>
+      </AuthDisabledButton>,
     ],
   };
 

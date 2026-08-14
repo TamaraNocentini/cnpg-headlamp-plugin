@@ -3,6 +3,7 @@ import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/Comm
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { DatabaseRole } from '../../resources/databaseRole';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchDatabaseRoleCreate } from './Create';
 
 const { createRouteURL } = Router;
@@ -78,14 +79,16 @@ export function DatabaseRolesList() {
     // our guided create form below already covers that slot via actions.
     titleSideActions: [],
     actions: [
-      <Button
+      <AuthDisabledButton
         key="create-databaserole"
-        variant="contained"
-        color="primary"
-        onClick={() => launchDatabaseRoleCreate()}
+        item={DatabaseRole}
+        authVerb="create"
+        deniedMessage="You don't have permission to create DatabaseRoles."
       >
-        Create Role
-      </Button>,
+        <Button variant="contained" color="primary" onClick={() => launchDatabaseRoleCreate()}>
+          Create Role
+        </Button>
+      </AuthDisabledButton>,
     ],
   };
 

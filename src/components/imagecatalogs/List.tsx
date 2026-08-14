@@ -1,6 +1,7 @@
 import { ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { ImageCatalog } from '../../resources/imageCatalog';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchImageCatalogCreate } from './Create';
 
 export function ImageCatalogsList() {
@@ -14,14 +15,16 @@ export function ImageCatalogsList() {
         // since our guided create form below already covers that slot via actions.
         titleSideActions: [],
         actions: [
-          <Button
+          <AuthDisabledButton
             key="create-imagecatalog"
-            variant="contained"
-            color="primary"
-            onClick={() => launchImageCatalogCreate()}
+            item={ImageCatalog}
+            authVerb="create"
+            deniedMessage="You don't have permission to create ImageCatalogs."
           >
-            Create ImageCatalog
-          </Button>,
+            <Button variant="contained" color="primary" onClick={() => launchImageCatalogCreate()}>
+              Create ImageCatalog
+            </Button>
+          </AuthDisabledButton>,
         ],
       }}
       columns={[

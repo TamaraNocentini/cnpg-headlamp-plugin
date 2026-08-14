@@ -1,6 +1,7 @@
 import { ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { ClusterImageCatalog } from '../../resources/imageCatalog';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchClusterImageCatalogCreate } from './Create';
 
 export function ClusterImageCatalogsList() {
@@ -14,14 +15,16 @@ export function ClusterImageCatalogsList() {
         // since our guided create form below already covers that slot via actions.
         titleSideActions: [],
         actions: [
-          <Button
+          <AuthDisabledButton
             key="create-clusterimagecatalog"
-            variant="contained"
-            color="primary"
-            onClick={() => launchClusterImageCatalogCreate()}
+            item={ClusterImageCatalog}
+            authVerb="create"
+            deniedMessage="You don't have permission to create ClusterImageCatalogs."
           >
-            Create ClusterImageCatalog
-          </Button>,
+            <Button variant="contained" color="primary" onClick={() => launchClusterImageCatalogCreate()}>
+              Create ClusterImageCatalog
+            </Button>
+          </AuthDisabledButton>,
         ],
       }}
       columns={[

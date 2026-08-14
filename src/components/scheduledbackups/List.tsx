@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import cronstrue from 'cronstrue';
 import { useLocation } from 'react-router-dom';
 import { ScheduledBackup } from '../../resources/scheduledbackup';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchScheduledBackupCreate } from './Create';
 import { launchTriggerBackup } from './TriggerBackup';
 
@@ -105,14 +106,16 @@ export function ScheduledBackupsList() {
     // our guided create form below already covers that slot via actions.
     titleSideActions: [],
     actions: [
-      <Button
+      <AuthDisabledButton
         key="create-scheduled-backup"
-        variant="contained"
-        color="primary"
-        onClick={() => launchScheduledBackupCreate()}
+        item={ScheduledBackup}
+        authVerb="create"
+        deniedMessage="You don't have permission to create ScheduledBackups."
       >
-        Create Scheduled Backup
-      </Button>,
+        <Button variant="contained" color="primary" onClick={() => launchScheduledBackupCreate()}>
+          Create Scheduled Backup
+        </Button>
+      </AuthDisabledButton>,
     ],
   };
 

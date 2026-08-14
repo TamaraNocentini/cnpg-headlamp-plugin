@@ -3,6 +3,7 @@ import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/Comm
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Publication } from '../../resources/publication';
+import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchPublicationCreate } from './Create';
 
 const { createRouteURL } = Router;
@@ -87,14 +88,16 @@ export function PublicationsList() {
     // our guided create form below already covers that slot via actions.
     titleSideActions: [],
     actions: [
-      <Button
+      <AuthDisabledButton
         key="create-publication"
-        variant="contained"
-        color="primary"
-        onClick={() => launchPublicationCreate()}
+        item={Publication}
+        authVerb="create"
+        deniedMessage="You don't have permission to create Publications."
       >
-        Create Publication
-      </Button>,
+        <Button variant="contained" color="primary" onClick={() => launchPublicationCreate()}>
+          Create Publication
+        </Button>
+      </AuthDisabledButton>,
     ],
   };
 
