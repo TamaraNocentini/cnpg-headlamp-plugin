@@ -45,7 +45,7 @@ export function ClustersList() {
             deniedMessage="You don't have permission to create Clusters."
           >
             <Button variant="contained" color="primary" onClick={() => launchClusterCreate()}>
-              Create Cluster
+              Create / Restore Cluster
             </Button>
           </AuthDisabledButton>,
         ],

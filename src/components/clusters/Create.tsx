@@ -297,7 +297,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <SectionBox title="Create Cluster">
+    <SectionBox title="Create / Restore Cluster">
       <FormControl fullWidth margin="normal">
         <InputLabel id="cluster-namespace-label">
           <RequiredLabel label="Namespace" required />
@@ -660,7 +660,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         disabled={!canSubmit}
         onClick={handleSubmit}
       >
-        Create
+        {bootstrapMethod === 'recovery' ? 'Restore' : 'Create'}
       </Button>
     </SectionBox>
   );
@@ -672,7 +672,7 @@ export function launchClusterCreate() {
   const activityId = 'cnpg-cluster-create';
   Activity.launch({
     id: activityId,
-    title: 'Create Cluster',
+    title: 'Create / Restore Cluster',
     icon: <Icon icon="mdi:plus-circle" width="100%" height="100%" />,
     location: 'split-right',
     content: <ClusterCreateForm onClose={() => Activity.close(activityId)} />,
