@@ -12,6 +12,7 @@ interface StorageSizeClassFieldsProps {
   onChange: (value: StorageConfiguration) => void;
   idPrefix: string;
   sizeLabel?: string;
+  sizeRequired?: boolean;
 }
 
 // A {size, storageClass} pair, used wherever the Cluster spec expects a StorageConfiguration
@@ -22,6 +23,7 @@ export function StorageSizeClassFields({
   onChange,
   idPrefix,
   sizeLabel = 'Size',
+  sizeRequired = true,
 }: StorageSizeClassFieldsProps) {
   const [storageClasses] = K8s.ResourceClasses.StorageClass.useList();
 
@@ -30,7 +32,7 @@ export function StorageSizeClassFields({
       <TextField
         fullWidth
         margin="normal"
-        label={<RequiredLabel label={sizeLabel} required />}
+        label={<RequiredLabel label={sizeLabel} required={sizeRequired} />}
         placeholder="1Gi"
         value={value.size ?? ''}
         onChange={e => onChange({ ...value, size: e.target.value })}

@@ -444,12 +444,13 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        Storage
+        <RequiredLabel label="Storage" required />
       </Typography>
 
       <StorageSizeClassFields
         idPrefix="cluster-storage"
         sizeLabel="PGData Size"
+        sizeRequired={false}
         value={storage}
         onChange={setStorage}
       />
