@@ -289,7 +289,7 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
         error={!retentionPolicyValid}
         helperText={
           retentionPolicyValid
-            ? "Optional. A positive integer followed by 'd', 'w', or 'm' (days/weeks/months)."
+            ? "A positive integer followed by 'd', 'w', or 'm' (days/weeks/months)."
             : "Must match a positive integer followed by 'd', 'w', or 'm', e.g. 30d."
         }
       />

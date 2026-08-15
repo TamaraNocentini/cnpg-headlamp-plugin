@@ -218,7 +218,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Comment"
-        helperText="Optional. A database-side comment on the role."
+        helperText="A database-side comment on the role."
         value={comment}
         onChange={e => setComment(e.target.value)}
       />
@@ -263,7 +263,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
         label="Connection Limit"
         type="number"
         inputProps={{ min: -1 }}
-        helperText="Optional. -1 (default) means no limit."
+        helperText="-1 (default) means no limit."
         value={connectionLimit}
         onChange={e => setConnectionLimit(e.target.value)}
       />
@@ -272,7 +272,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Member Of (In Roles)"
-        helperText="Optional. Comma-separated list of existing roles this role is added to, e.g. pg_monitor, pg_signal_backend."
+        helperText="Comma-separated list of existing roles this role is added to, e.g. pg_monitor, pg_signal_backend."
         value={inRoles}
         onChange={e => setInRoles(e.target.value)}
       />

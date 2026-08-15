@@ -119,7 +119,7 @@ function PublicationObjectsEditor({
               <TextField
                 margin="normal"
                 label="Columns"
-                helperText="Optional, comma-separated"
+                helperText="Comma-separated"
                 value={row.columns}
                 onChange={e => updateRow(row.id, { columns: e.target.value })}
               />

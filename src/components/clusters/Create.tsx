@@ -551,7 +551,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         <TextField
           fullWidth
           margin="normal"
-          label="Server Name (optional)"
+          label="Server Name"
           placeholder={name || 'cluster-example'}
           helperText="The name backups are filed under in the object store. Defaults to this cluster's name if left empty."
           value={backupServerName}

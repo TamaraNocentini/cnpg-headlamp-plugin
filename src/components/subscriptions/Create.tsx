@@ -205,7 +205,7 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Publication Database"
-        helperText="Optional. Defaults to the database configured in the external cluster definition."
+        helperText="Defaults to the database configured in the external cluster definition."
         value={publicationDBName}
         onChange={e => setPublicationDBName(e.target.value)}
       />

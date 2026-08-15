@@ -193,7 +193,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Template"
-        helperText="Optional. The template database to create this one from. Cannot be changed afterwards."
+        helperText="The template database to create this one from. Cannot be changed afterwards."
         placeholder="template0"
         value={template}
         onChange={e => setTemplate(e.target.value)}
@@ -203,7 +203,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Encoding"
-        helperText="Optional. Character set encoding to use in the database. Cannot be changed afterwards."
+        helperText="Character set encoding to use in the database. Cannot be changed afterwards."
         placeholder="UTF8"
         value={encoding}
         onChange={e => setEncoding(e.target.value)}
@@ -237,7 +237,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
             fullWidth
             margin="normal"
             label="ICU Rules"
-            helperText="Optional. Additional collation rules to customize the default collation. Requires PostgreSQL 16+."
+            helperText="Additional collation rules to customize the default collation. Requires PostgreSQL 16+."
             value={icuRules}
             onChange={e => setIcuRules(e.target.value)}
           />
