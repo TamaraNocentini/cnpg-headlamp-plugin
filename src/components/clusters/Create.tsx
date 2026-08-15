@@ -325,13 +325,13 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       />
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        Instances
+        <RequiredLabel label="Instances" required />
       </Typography>
 
       <TextField
         fullWidth
         margin="normal"
-        label={<RequiredLabel label="Instances" required />}
+        aria-label="Instances"
         type="number"
         inputProps={{ min: 1 }}
         value={instances}
@@ -598,16 +598,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        Bootstrap
+        <RequiredLabel label="Bootstrap" required />
       </Typography>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="cluster-bootstrap-label">
-          <RequiredLabel label="Bootstrap Method" required />
-        </InputLabel>
         <Select
-          labelId="cluster-bootstrap-label"
-          label={<RequiredLabel label="Bootstrap Method" required />}
+          aria-label="Bootstrap Method"
           value={bootstrapMethod}
           onChange={e => setBootstrapMethod(e.target.value as BootstrapMethod)}
         >
