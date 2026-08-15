@@ -12,6 +12,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { ObjectStore, SecretKeyRef } from '../../resources/objectStore';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { SecretKeySelector } from '../common/SecretKeySelector';
 import { YamlPreview } from '../common/YamlPreview';
 
@@ -170,10 +171,12 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create ObjectStore">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="objectstore-namespace-label">Namespace</InputLabel>
+        <InputLabel id="objectstore-namespace-label">
+          <RequiredLabel label="Namespace" required />
+        </InputLabel>
         <Select
           labelId="objectstore-namespace-label"
-          label="Namespace"
+          label={<RequiredLabel label="Namespace" required />}
           value={namespace}
           onChange={e => setNamespace(e.target.value)}
         >
@@ -188,7 +191,7 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
       />
@@ -196,7 +199,7 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Destination Path"
+        label={<RequiredLabel label="Destination Path" required />}
         placeholder="s3://bucket/path/to/folder"
         value={destinationPath}
         onChange={e => setDestinationPath(e.target.value)}
@@ -228,10 +231,12 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
       )}
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="objectstore-authmethod-label">S3 Authentication</InputLabel>
+        <InputLabel id="objectstore-authmethod-label">
+          <RequiredLabel label="S3 Authentication" required />
+        </InputLabel>
         <Select
           labelId="objectstore-authmethod-label"
-          label="S3 Authentication"
+          label={<RequiredLabel label="S3 Authentication" required />}
           value={authMethod}
           onChange={e => setAuthMethod(e.target.value as S3AuthMethod)}
         >

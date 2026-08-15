@@ -6,6 +6,7 @@ import Select from '@mui/material/Select';
 import { useEffect, useState } from 'react';
 import { BackupMethod, BackupTarget } from '../../resources/backup';
 import { Cluster } from '../../resources/cluster';
+import { RequiredLabel } from './RequiredLabel';
 
 /**
  * Shared method/plugin/target sub-form state for Backup and ScheduledBackup create forms — both
@@ -87,10 +88,12 @@ export function BackupMethodFields({
       )}
 
       <FormControl fullWidth margin="normal" disabled={!hasAnyMethod}>
-        <InputLabel id={`${idPrefix}-method-label`}>Method</InputLabel>
+        <InputLabel id={`${idPrefix}-method-label`}>
+          <RequiredLabel label="Method" required />
+        </InputLabel>
         <Select
           labelId={`${idPrefix}-method-label`}
-          label="Method"
+          label={<RequiredLabel label="Method" required />}
           value={method}
           onChange={e => setMethod(e.target.value as BackupMethod)}
         >
@@ -105,10 +108,12 @@ export function BackupMethodFields({
 
       {method === 'plugin' && (
         <FormControl fullWidth margin="normal" disabled={!hasPlugins}>
-          <InputLabel id={`${idPrefix}-plugin-label`}>Plugin</InputLabel>
+          <InputLabel id={`${idPrefix}-plugin-label`}>
+            <RequiredLabel label="Plugin" required />
+          </InputLabel>
           <Select
             labelId={`${idPrefix}-plugin-label`}
-            label="Plugin"
+            label={<RequiredLabel label="Plugin" required />}
             value={pluginName}
             onChange={e => setPluginName(e.target.value)}
           >

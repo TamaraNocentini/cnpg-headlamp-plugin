@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { ClusterImageCatalog } from '../../resources/imageCatalog';
 import { CatalogImageRow, CatalogImagesEditor } from '../common/CatalogImagesEditor';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 interface ClusterImageCatalogFormState {
@@ -65,7 +66,7 @@ function ClusterImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
       />

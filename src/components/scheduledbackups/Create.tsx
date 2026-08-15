@@ -17,6 +17,7 @@ import { Cluster } from '../../resources/cluster';
 import { BackupOwnerReference, ScheduledBackup } from '../../resources/scheduledbackup';
 import { BackupMethodFields, useBackupMethodState } from '../common/BackupMethodFields';
 import { CronScheduleEditor } from '../common/CronScheduleEditor';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 interface ScheduledBackupFormState {
@@ -147,10 +148,12 @@ function ScheduledBackupCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Scheduled Backup">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="scheduled-backup-cluster-label">Cluster</InputLabel>
+        <InputLabel id="scheduled-backup-cluster-label">
+          <RequiredLabel label="Cluster" required />
+        </InputLabel>
         <Select
           labelId="scheduled-backup-cluster-label"
-          label="Cluster"
+          label={<RequiredLabel label="Cluster" required />}
           value={clusterKey}
           onChange={e => setClusterKey(e.target.value)}
         >
@@ -168,7 +171,7 @@ function ScheduledBackupCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
         placeholder={selectedCluster ? `backup-schedule-${selectedCluster.getName()}` : undefined}

@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Publication } from '../../resources/publication';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 type TargetType = 'allTables' | 'objects';
@@ -79,10 +80,12 @@ function PublicationObjectsEditor({
           }}
         >
           <FormControl margin="normal" sx={{ width: 160 }}>
-            <InputLabel id={`${row.id}-kind-label`}>Type</InputLabel>
+            <InputLabel id={`${row.id}-kind-label`}>
+              <RequiredLabel label="Type" required />
+            </InputLabel>
             <Select
               labelId={`${row.id}-kind-label`}
-              label="Type"
+              label={<RequiredLabel label="Type" required />}
               value={row.kind}
               onChange={e => updateRow(row.id, { kind: e.target.value as ObjectRowKind })}
             >
@@ -94,7 +97,7 @@ function PublicationObjectsEditor({
           {row.kind === 'schema' ? (
             <TextField
               margin="normal"
-              label="Schema"
+              label={<RequiredLabel label="Schema" required />}
               value={row.tablesInSchema}
               onChange={e => updateRow(row.id, { tablesInSchema: e.target.value })}
             />
@@ -109,7 +112,7 @@ function PublicationObjectsEditor({
               />
               <TextField
                 margin="normal"
-                label="Table Name"
+                label={<RequiredLabel label="Table Name" required />}
                 value={row.tableName}
                 onChange={e => updateRow(row.id, { tableName: e.target.value })}
               />
@@ -252,10 +255,12 @@ function PublicationCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Publication">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="publication-cluster-label">Cluster (Publisher)</InputLabel>
+        <InputLabel id="publication-cluster-label">
+          <RequiredLabel label="Cluster (Publisher)" required />
+        </InputLabel>
         <Select
           labelId="publication-cluster-label"
-          label="Cluster (Publisher)"
+          label={<RequiredLabel label="Cluster (Publisher)" required />}
           value={clusterKey}
           onChange={e => setClusterKey(e.target.value)}
         >
@@ -273,7 +278,7 @@ function PublicationCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Object Name"
+        label={<RequiredLabel label="Object Name" required />}
         helperText="Name of the Kubernetes Publication object."
         value={name}
         onChange={e => setName(e.target.value)}
@@ -283,7 +288,7 @@ function PublicationCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Publication Name"
+        label={<RequiredLabel label="Publication Name" required />}
         helperText="Name of the publication to create inside PostgreSQL. Cannot be changed afterwards."
         value={pgName}
         onChange={e => setPgName(e.target.value)}
@@ -292,17 +297,19 @@ function PublicationCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Database"
+        label={<RequiredLabel label="Database" required />}
         helperText="Database in the publisher cluster where the publication will be created. Cannot be changed afterwards."
         value={dbname}
         onChange={e => setDbname(e.target.value)}
       />
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="publication-target-label">Target</InputLabel>
+        <InputLabel id="publication-target-label">
+          <RequiredLabel label="Target" required />
+        </InputLabel>
         <Select
           labelId="publication-target-label"
-          label="Target"
+          label={<RequiredLabel label="Target" required />}
           value={targetType}
           onChange={e => setTargetType(e.target.value as TargetType)}
         >

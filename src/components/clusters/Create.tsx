@@ -18,6 +18,7 @@ import { Cluster, StorageConfiguration } from '../../resources/cluster';
 import { ClusterImageCatalog, ImageCatalog } from '../../resources/imageCatalog';
 import { ObjectStore } from '../../resources/objectStore';
 import { VolumeSnapshotClass } from '../../resources/volumeSnapshotClass';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { StorageSizeClassFields } from '../common/StorageSizeClassFields';
 import { YamlPreview } from '../common/YamlPreview';
 
@@ -298,10 +299,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Cluster">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="cluster-namespace-label">Namespace</InputLabel>
+        <InputLabel id="cluster-namespace-label">
+          <RequiredLabel label="Namespace" required />
+        </InputLabel>
         <Select
           labelId="cluster-namespace-label"
-          label="Namespace"
+          label={<RequiredLabel label="Namespace" required />}
           value={namespace}
           onChange={e => setNamespace(e.target.value)}
         >
@@ -316,7 +319,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
       />
@@ -328,7 +331,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Instances"
+        label={<RequiredLabel label="Instances" required />}
         type="number"
         inputProps={{ min: 1 }}
         value={instances}
@@ -370,7 +373,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         <TextField
           fullWidth
           margin="normal"
-          label="Image Name"
+          label={<RequiredLabel label="Image Name" required />}
           placeholder="ghcr.io/cloudnative-pg/postgresql:17.0"
           value={imageName}
           onChange={e => setImageName(e.target.value)}
@@ -380,10 +383,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       {imageSource === 'catalog' && (
         <>
           <FormControl fullWidth margin="normal">
-            <InputLabel id="cluster-imagecatalogkind-label">Catalog Kind</InputLabel>
+            <InputLabel id="cluster-imagecatalogkind-label">
+              <RequiredLabel label="Catalog Kind" required />
+            </InputLabel>
             <Select
               labelId="cluster-imagecatalogkind-label"
-              label="Catalog Kind"
+              label={<RequiredLabel label="Catalog Kind" required />}
               value={imageCatalogKind}
               onChange={e => {
                 setImageCatalogKind(e.target.value as CatalogKind);
@@ -397,10 +402,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
           </FormControl>
 
           <FormControl fullWidth margin="normal">
-            <InputLabel id="cluster-imagecatalogname-label">Catalog</InputLabel>
+            <InputLabel id="cluster-imagecatalogname-label">
+              <RequiredLabel label="Catalog" required />
+            </InputLabel>
             <Select
               labelId="cluster-imagecatalogname-label"
-              label="Catalog"
+              label={<RequiredLabel label="Catalog" required />}
               value={imageCatalogName}
               onChange={e => {
                 setImageCatalogName(e.target.value);
@@ -416,10 +423,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
           </FormControl>
 
           <FormControl fullWidth margin="normal">
-            <InputLabel id="cluster-imagecatalogmajor-label">Major Version</InputLabel>
+            <InputLabel id="cluster-imagecatalogmajor-label">
+              <RequiredLabel label="Major Version" required />
+            </InputLabel>
             <Select
               labelId="cluster-imagecatalogmajor-label"
-              label="Major Version"
+              label={<RequiredLabel label="Major Version" required />}
               value={imageCatalogMajor}
               disabled={!selectedImageCatalog}
               onChange={e => setImageCatalogMajor(e.target.value)}
@@ -473,7 +482,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
             <TextField
               fullWidth
               margin="normal"
-              label="Tablespace Name"
+              label={<RequiredLabel label="Tablespace Name" required />}
               value={t.name}
               onChange={e => updateTablespace(t.id, { name: e.target.value })}
             />
@@ -521,10 +530,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       />
       {backupEnabled && (
         <FormControl fullWidth margin="normal">
-          <InputLabel id="cluster-backup-objectstore-label">Object Store</InputLabel>
+          <InputLabel id="cluster-backup-objectstore-label">
+            <RequiredLabel label="Object Store" required />
+          </InputLabel>
           <Select
             labelId="cluster-backup-objectstore-label"
-            label="Object Store"
+            label={<RequiredLabel label="Object Store" required />}
             value={backupObjectStoreName}
             onChange={e => setBackupObjectStoreName(e.target.value)}
           >
@@ -568,10 +579,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       />
       {volumeSnapshotEnabled && (
         <FormControl fullWidth margin="normal">
-          <InputLabel id="cluster-volumesnapshotclass-label">Volume Snapshot Class</InputLabel>
+          <InputLabel id="cluster-volumesnapshotclass-label">
+            <RequiredLabel label="Volume Snapshot Class" required />
+          </InputLabel>
           <Select
             labelId="cluster-volumesnapshotclass-label"
-            label="Volume Snapshot Class"
+            label={<RequiredLabel label="Volume Snapshot Class" required />}
             value={volumeSnapshotClassName}
             onChange={e => setVolumeSnapshotClassName(e.target.value)}
           >
@@ -589,10 +602,12 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       </Typography>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="cluster-bootstrap-label">Bootstrap Method</InputLabel>
+        <InputLabel id="cluster-bootstrap-label">
+          <RequiredLabel label="Bootstrap Method" required />
+        </InputLabel>
         <Select
           labelId="cluster-bootstrap-label"
-          label="Bootstrap Method"
+          label={<RequiredLabel label="Bootstrap Method" required />}
           value={bootstrapMethod}
           onChange={e => setBootstrapMethod(e.target.value as BootstrapMethod)}
         >
@@ -605,11 +620,11 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
         <>
           <FormControl fullWidth margin="normal">
             <InputLabel id="cluster-recovery-objectstore-label">
-              Recovery Source Object Store
+              <RequiredLabel label="Recovery Source Object Store" required />
             </InputLabel>
             <Select
               labelId="cluster-recovery-objectstore-label"
-              label="Recovery Source Object Store"
+              label={<RequiredLabel label="Recovery Source Object Store" required />}
               value={recoveryObjectStoreName}
               onChange={e => setRecoveryObjectStoreName(e.target.value)}
             >
@@ -624,7 +639,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
           <TextField
             fullWidth
             margin="normal"
-            label="Source Server Name"
+            label={<RequiredLabel label="Source Server Name" required />}
             placeholder="cluster-example"
             helperText="The name of the original cluster whose backups are being restored (the server name it archived WALs/backups under)."
             value={recoveryServerName}

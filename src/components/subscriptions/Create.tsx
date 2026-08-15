@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Subscription } from '../../resources/subscription';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 interface SubscriptionFormState {
@@ -111,10 +112,12 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Subscription">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="subscription-cluster-label">Cluster (Subscriber)</InputLabel>
+        <InputLabel id="subscription-cluster-label">
+          <RequiredLabel label="Cluster (Subscriber)" required />
+        </InputLabel>
         <Select
           labelId="subscription-cluster-label"
-          label="Cluster (Subscriber)"
+          label={<RequiredLabel label="Cluster (Subscriber)" required />}
           value={clusterKey}
           onChange={e => {
             setClusterKey(e.target.value);
@@ -135,7 +138,7 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Object Name"
+        label={<RequiredLabel label="Object Name" required />}
         helperText="Name of the Kubernetes Subscription object."
         value={name}
         onChange={e => setName(e.target.value)}
@@ -145,7 +148,7 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Subscription Name"
+        label={<RequiredLabel label="Subscription Name" required />}
         helperText="Name of the subscription to create inside PostgreSQL. Cannot be changed afterwards."
         value={pgName}
         onChange={e => setPgName(e.target.value)}
@@ -154,7 +157,7 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Database"
+        label={<RequiredLabel label="Database" required />}
         helperText="Database in the subscriber cluster where the subscription will be created. Cannot be changed afterwards."
         value={dbname}
         onChange={e => setDbname(e.target.value)}
@@ -163,11 +166,11 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
       {externalClusterOptions.length > 0 ? (
         <FormControl fullWidth margin="normal">
           <InputLabel id="subscription-externalcluster-label">
-            Publisher (External Cluster)
+            <RequiredLabel label="Publisher (External Cluster)" required />
           </InputLabel>
           <Select
             labelId="subscription-externalcluster-label"
-            label="Publisher (External Cluster)"
+            label={<RequiredLabel label="Publisher (External Cluster)" required />}
             value={externalClusterName}
             onChange={e => setExternalClusterName(e.target.value)}
           >
@@ -182,7 +185,7 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
         <TextField
           fullWidth
           margin="normal"
-          label="Publisher (External Cluster)"
+          label={<RequiredLabel label="Publisher (External Cluster)" required />}
           helperText="Name of an entry in the subscriber Cluster's spec.externalClusters pointing at the publisher."
           value={externalClusterName}
           onChange={e => setExternalClusterName(e.target.value)}
@@ -192,7 +195,7 @@ function SubscriptionCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Publication Name"
+        label={<RequiredLabel label="Publication Name" required />}
         helperText="Name of the publication on the publisher cluster to subscribe to."
         value={publicationName}
         onChange={e => setPublicationName(e.target.value)}

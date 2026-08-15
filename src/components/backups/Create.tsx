@@ -13,6 +13,7 @@ import { useMemo, useState } from 'react';
 import { Backup, BackupMethod, BackupTarget } from '../../resources/backup';
 import { Cluster } from '../../resources/cluster';
 import { BackupMethodFields, useBackupMethodState } from '../common/BackupMethodFields';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 interface BackupFormState {
@@ -106,10 +107,12 @@ function BackupCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Backup">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="backup-cluster-label">Cluster</InputLabel>
+        <InputLabel id="backup-cluster-label">
+          <RequiredLabel label="Cluster" required />
+        </InputLabel>
         <Select
           labelId="backup-cluster-label"
-          label="Cluster"
+          label={<RequiredLabel label="Cluster" required />}
           value={clusterKey}
           onChange={e => setClusterKey(e.target.value)}
         >
@@ -127,7 +130,7 @@ function BackupCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
         placeholder={selectedCluster ? `backup-${selectedCluster.getName()}` : undefined}

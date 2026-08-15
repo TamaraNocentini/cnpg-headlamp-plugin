@@ -5,6 +5,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import TextField from '@mui/material/TextField';
 import { StorageConfiguration } from '../../resources/cluster';
+import { RequiredLabel } from './RequiredLabel';
 
 interface StorageSizeClassFieldsProps {
   value: StorageConfiguration;
@@ -29,7 +30,7 @@ export function StorageSizeClassFields({
       <TextField
         fullWidth
         margin="normal"
-        label={sizeLabel}
+        label={<RequiredLabel label={sizeLabel} required />}
         placeholder="1Gi"
         value={value.size ?? ''}
         onChange={e => onChange({ ...value, size: e.target.value })}

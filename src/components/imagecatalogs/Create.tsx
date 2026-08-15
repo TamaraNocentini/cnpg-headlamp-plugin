@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { ImageCatalog } from '../../resources/imageCatalog';
 import { CatalogImageRow, CatalogImagesEditor } from '../common/CatalogImagesEditor';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 interface ImageCatalogFormState {
@@ -70,10 +71,12 @@ function ImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create ImageCatalog">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="imagecatalog-namespace-label">Namespace</InputLabel>
+        <InputLabel id="imagecatalog-namespace-label">
+          <RequiredLabel label="Namespace" required />
+        </InputLabel>
         <Select
           labelId="imagecatalog-namespace-label"
-          label="Namespace"
+          label={<RequiredLabel label="Namespace" required />}
           value={namespace}
           onChange={e => setNamespace(e.target.value)}
         >
@@ -88,7 +91,7 @@ function ImageCatalogCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
       />

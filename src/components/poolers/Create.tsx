@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Pooler } from '../../resources/pooler';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 type PoolerType = 'rw' | 'ro' | 'r';
@@ -88,10 +89,12 @@ function PoolerCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Pooler">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="pooler-cluster-label">Cluster</InputLabel>
+        <InputLabel id="pooler-cluster-label">
+          <RequiredLabel label="Cluster" required />
+        </InputLabel>
         <Select
           labelId="pooler-cluster-label"
-          label="Cluster"
+          label={<RequiredLabel label="Cluster" required />}
           value={clusterKey}
           onChange={e => setClusterKey(e.target.value)}
         >
@@ -109,17 +112,19 @@ function PoolerCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Name"
+        label={<RequiredLabel label="Name" required />}
         value={name}
         onChange={e => setName(e.target.value)}
         placeholder={selectedCluster ? `pooler-${selectedCluster.getName()}-${type}` : undefined}
       />
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="pooler-type-label">Type</InputLabel>
+        <InputLabel id="pooler-type-label">
+          <RequiredLabel label="Type" required />
+        </InputLabel>
         <Select
           labelId="pooler-type-label"
-          label="Type"
+          label={<RequiredLabel label="Type" required />}
           value={type}
           onChange={e => setType(e.target.value as PoolerType)}
         >
@@ -130,10 +135,12 @@ function PoolerCreateForm({ onClose }: { onClose: () => void }) {
       </FormControl>
 
       <FormControl fullWidth margin="normal">
-        <InputLabel id="pooler-poolmode-label">Pool Mode</InputLabel>
+        <InputLabel id="pooler-poolmode-label">
+          <RequiredLabel label="Pool Mode" required />
+        </InputLabel>
         <Select
           labelId="pooler-poolmode-label"
-          label="Pool Mode"
+          label={<RequiredLabel label="Pool Mode" required />}
           value={poolMode}
           onChange={e => setPoolMode(e.target.value as PoolMode)}
         >

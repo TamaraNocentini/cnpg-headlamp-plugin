@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Database } from '../../resources/database';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 // 'libc' is PostgreSQL's historical default and doesn't require anything else — 'icu' and
@@ -140,10 +141,12 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Database">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="database-cluster-label">Cluster</InputLabel>
+        <InputLabel id="database-cluster-label">
+          <RequiredLabel label="Cluster" required />
+        </InputLabel>
         <Select
           labelId="database-cluster-label"
-          label="Cluster"
+          label={<RequiredLabel label="Cluster" required />}
           value={clusterKey}
           onChange={e => setClusterKey(e.target.value)}
         >
@@ -161,7 +164,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Object Name"
+        label={<RequiredLabel label="Object Name" required />}
         helperText="Name of the Kubernetes Database object."
         value={name}
         onChange={e => setName(e.target.value)}
@@ -171,7 +174,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Database Name"
+        label={<RequiredLabel label="Database Name" required />}
         helperText="Name of the database to create inside PostgreSQL. Cannot be changed afterwards."
         value={pgName}
         onChange={e => setPgName(e.target.value)}
@@ -180,7 +183,7 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Owner"
+        label={<RequiredLabel label="Owner" required />}
         helperText="Role that owns the database inside PostgreSQL."
         value={owner}
         onChange={e => setOwner(e.target.value)}

@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { DatabaseRole } from '../../resources/databaseRole';
+import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
 interface DatabaseRoleFormState {
@@ -174,10 +175,12 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
   return (
     <SectionBox title="Create Role">
       <FormControl fullWidth margin="normal">
-        <InputLabel id="databaserole-cluster-label">Cluster</InputLabel>
+        <InputLabel id="databaserole-cluster-label">
+          <RequiredLabel label="Cluster" required />
+        </InputLabel>
         <Select
           labelId="databaserole-cluster-label"
-          label="Cluster"
+          label={<RequiredLabel label="Cluster" required />}
           value={clusterKey}
           onChange={e => setClusterKey(e.target.value)}
         >
@@ -195,7 +198,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Object Name"
+        label={<RequiredLabel label="Object Name" required />}
         helperText="Name of the Kubernetes DatabaseRole object."
         value={name}
         onChange={e => setName(e.target.value)}
@@ -205,7 +208,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
       <TextField
         fullWidth
         margin="normal"
-        label="Role Name"
+        label={<RequiredLabel label="Role Name" required />}
         helperText="Name of the role to create inside PostgreSQL. Cannot be changed afterwards."
         value={pgName}
         onChange={e => setPgName(e.target.value)}

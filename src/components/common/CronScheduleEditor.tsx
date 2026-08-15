@@ -9,6 +9,7 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import cronstrue from 'cronstrue';
 import { useState } from 'react';
+import { RequiredLabel } from './RequiredLabel';
 
 type CronMode = 'daily' | 'weekly' | 'monthly' | 'advanced';
 
@@ -140,7 +141,9 @@ export function CronScheduleEditor({
 
   return (
     <Stack spacing={1} sx={{ mt: 2, mb: 1 }}>
-      <Typography variant="subtitle2">Schedule</Typography>
+      <Typography variant="subtitle2">
+        <RequiredLabel label="Schedule" required />
+      </Typography>
 
       <ToggleButtonGroup
         exclusive
@@ -238,7 +241,12 @@ export function CronScheduleEditor({
         <TextField
           fullWidth
           margin="normal"
-          label="Cron expression (6 fields: sec min hour day month weekday)"
+          label={
+            <RequiredLabel
+              label="Cron expression (6 fields: sec min hour day month weekday)"
+              required
+            />
+          }
           value={value}
           onChange={e => onChange(e.target.value)}
           placeholder="0 0 0 * * *"

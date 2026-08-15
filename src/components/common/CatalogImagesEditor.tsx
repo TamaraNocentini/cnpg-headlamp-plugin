@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
 import { CatalogImage } from '../../resources/imageCatalog';
+import { RequiredLabel } from './RequiredLabel';
 
 export interface CatalogImageRow extends CatalogImage {
   id: string;
@@ -36,7 +37,7 @@ export function CatalogImagesEditor({ idPrefix, rows, onChange }: CatalogImagesE
         <Box key={row.id} sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1, mb: 1 }}>
           <TextField
             margin="normal"
-            label="Major Version"
+            label={<RequiredLabel label="Major Version" required />}
             type="number"
             inputProps={{ min: 1 }}
             sx={{ width: 160 }}
@@ -46,7 +47,7 @@ export function CatalogImagesEditor({ idPrefix, rows, onChange }: CatalogImagesE
           <TextField
             fullWidth
             margin="normal"
-            label="Image"
+            label={<RequiredLabel label="Image" required />}
             placeholder="ghcr.io/cloudnative-pg/postgresql:17.0"
             value={row.image}
             onChange={e => updateRow(row.id, { image: e.target.value })}

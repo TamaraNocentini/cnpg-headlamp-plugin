@@ -4,6 +4,7 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import { SecretKeyRef } from '../../resources/objectStore';
+import { RequiredLabel } from './RequiredLabel';
 
 interface SecretKeySelectorProps {
   namespace: string;
@@ -31,10 +32,12 @@ export function SecretKeySelector({
   return (
     <>
       <FormControl fullWidth margin="normal">
-        <InputLabel id={`${idPrefix}-secret-label`}>{label} — Secret</InputLabel>
+        <InputLabel id={`${idPrefix}-secret-label`}>
+          <RequiredLabel label={`${label} — Secret`} required />
+        </InputLabel>
         <Select
           labelId={`${idPrefix}-secret-label`}
-          label={`${label} — Secret`}
+          label={<RequiredLabel label={`${label} — Secret`} required />}
           value={value?.name ?? ''}
           onChange={e => onChange({ name: e.target.value, key: '' })}
         >
@@ -47,10 +50,12 @@ export function SecretKeySelector({
       </FormControl>
 
       <FormControl fullWidth margin="normal" disabled={!selectedSecret}>
-        <InputLabel id={`${idPrefix}-key-label`}>{label} — Key</InputLabel>
+        <InputLabel id={`${idPrefix}-key-label`}>
+          <RequiredLabel label={`${label} — Key`} required />
+        </InputLabel>
         <Select
           labelId={`${idPrefix}-key-label`}
-          label={`${label} — Key`}
+          label={<RequiredLabel label={`${label} — Key`} required />}
           value={value?.key ?? ''}
           onChange={e => onChange({ name: value?.name ?? '', key: e.target.value })}
         >
