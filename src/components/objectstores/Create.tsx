@@ -295,7 +295,7 @@ function ObjectStoreCreateForm({ onClose }: { onClose: () => void }) {
       />
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        WAL archive tuning (optional)
+        WAL archive tuning
       </Typography>
 
       <FormControl fullWidth margin="normal">

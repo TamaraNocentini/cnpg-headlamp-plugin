@@ -278,7 +278,7 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
       />
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        Password (optional)
+        Password
       </Typography>
       <FormControlLabel
         control={

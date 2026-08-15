@@ -352,7 +352,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        PostgreSQL Image (optional)
+        PostgreSQL Image
       </Typography>
 
       <FormControl fullWidth margin="normal">
@@ -471,7 +471,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        Tablespaces (optional)
+        Tablespaces
       </Typography>
 
       {tablespaces.map(t => (
@@ -561,7 +561,7 @@ function ClusterCreateForm({ onClose }: { onClose: () => void }) {
       )}
 
       <Typography variant="subtitle1" sx={{ mt: 2 }}>
-        Volume Snapshots (optional)
+        Volume Snapshots
       </Typography>
 
       <FormControlLabel
