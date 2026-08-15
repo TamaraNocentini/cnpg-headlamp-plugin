@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { DatabaseRole } from '../../resources/databaseRole';
+import { ImmutableNote } from '../common/ImmutableNote';
 import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
@@ -209,7 +210,11 @@ function DatabaseRoleCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label={<RequiredLabel label="Role Name" required />}
-        helperText="Name of the role to create inside PostgreSQL. Cannot be changed afterwards."
+        helperText={
+          <>
+            Name of the role to create inside PostgreSQL. <ImmutableNote />
+          </>
+        }
         value={pgName}
         onChange={e => setPgName(e.target.value)}
       />

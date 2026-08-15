@@ -11,6 +11,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Database } from '../../resources/database';
+import { ImmutableNote } from '../common/ImmutableNote';
 import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
@@ -175,7 +176,11 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label={<RequiredLabel label="Database Name" required />}
-        helperText="Name of the database to create inside PostgreSQL. Cannot be changed afterwards."
+        helperText={
+          <>
+            Name of the database to create inside PostgreSQL. <ImmutableNote />
+          </>
+        }
         value={pgName}
         onChange={e => setPgName(e.target.value)}
       />
@@ -193,7 +198,11 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Template"
-        helperText="The template database to create this one from. Cannot be changed afterwards."
+        helperText={
+          <>
+            The template database to create this one from. <ImmutableNote />
+          </>
+        }
         placeholder="template0"
         value={template}
         onChange={e => setTemplate(e.target.value)}
@@ -203,7 +212,11 @@ function DatabaseCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label="Encoding"
-        helperText="Character set encoding to use in the database. Cannot be changed afterwards."
+        helperText={
+          <>
+            Character set encoding to use in the database. <ImmutableNote />
+          </>
+        }
         placeholder="UTF8"
         value={encoding}
         onChange={e => setEncoding(e.target.value)}

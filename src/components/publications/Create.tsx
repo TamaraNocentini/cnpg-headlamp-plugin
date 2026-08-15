@@ -15,6 +15,7 @@ import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 import { Cluster } from '../../resources/cluster';
 import { Publication } from '../../resources/publication';
+import { ImmutableNote } from '../common/ImmutableNote';
 import { RequiredLabel } from '../common/RequiredLabel';
 import { YamlPreview } from '../common/YamlPreview';
 
@@ -289,7 +290,11 @@ function PublicationCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label={<RequiredLabel label="Publication Name" required />}
-        helperText="Name of the publication to create inside PostgreSQL. Cannot be changed afterwards."
+        helperText={
+          <>
+            Name of the publication to create inside PostgreSQL. <ImmutableNote />
+          </>
+        }
         value={pgName}
         onChange={e => setPgName(e.target.value)}
       />
@@ -298,7 +303,12 @@ function PublicationCreateForm({ onClose }: { onClose: () => void }) {
         fullWidth
         margin="normal"
         label={<RequiredLabel label="Database" required />}
-        helperText="Database in the publisher cluster where the publication will be created. Cannot be changed afterwards."
+        helperText={
+          <>
+            Database in the publisher cluster where the publication will be created.{' '}
+            <ImmutableNote />
+          </>
+        }
         value={dbname}
         onChange={e => setDbname(e.target.value)}
       />
