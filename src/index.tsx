@@ -39,8 +39,13 @@ import { OperatorStatus } from './components/status/OperatorStatus';
 import { SubscriptionDetail } from './components/subscriptions/Detail';
 import { SubscriptionsList } from './components/subscriptions/List';
 
+// Sidebar entry "name"s share one global namespace with Headlamp's own entries and every other
+// installed plugin — the same hazard as route names below. Bare 'Clusters'/'Backups'/'Status'
+// would be prime collision candidates, so every entry is prefixed. These names are internal
+// wiring only (the visible text is `label`), and each entry sets an explicit `url`, so nothing
+// falls back to resolving a route by entry name.
 registerSidebarEntry({
-  name: 'CloudNativePG',
+  name: 'cnpg-root',
   // Points at the operator/plugin status overview rather than straight at the cluster list, so
   // clicking the top-level sidebar entry answers "is CNPG even installed correctly?" first.
   url: '/cnpg/status',
@@ -50,97 +55,97 @@ registerSidebarEntry({
 });
 
 registerSidebarEntry({
-  name: 'Status',
+  name: 'cnpg-status',
   url: '/cnpg/status',
-  parent: 'CloudNativePG',
+  parent: 'cnpg-root',
   label: 'Status',
 });
 
 registerSidebarEntry({
-  name: 'ClustersGroup',
+  name: 'cnpg-clusters-group',
   // See the equivalent comment on ImageCatalogsGroup below: without an explicit url this group
   // link would resolve to nothing (its name/first-child-name isn't a registered route name) and
   // never expand, so it's pointed straight at the first child's page instead.
   url: '/cnpg/clusters',
-  parent: 'CloudNativePG',
+  parent: 'cnpg-root',
   label: 'Postgres Clusters',
 });
 
 registerSidebarEntry({
-  name: 'Clusters',
+  name: 'cnpg-clusters',
   url: '/cnpg/clusters',
-  parent: 'ClustersGroup',
+  parent: 'cnpg-clusters-group',
   label: 'Clusters',
 });
 
 registerSidebarEntry({
-  name: 'Databases',
+  name: 'cnpg-databases',
   url: '/cnpg/databases',
-  parent: 'ClustersGroup',
+  parent: 'cnpg-clusters-group',
   label: 'Databases',
 });
 
 registerSidebarEntry({
-  name: 'DatabaseRoles',
+  name: 'cnpg-database-roles',
   url: '/cnpg/databaseroles',
-  parent: 'ClustersGroup',
+  parent: 'cnpg-clusters-group',
   label: 'Roles',
 });
 
 registerSidebarEntry({
-  name: 'Publications',
+  name: 'cnpg-publications',
   url: '/cnpg/publications',
-  parent: 'ClustersGroup',
+  parent: 'cnpg-clusters-group',
   label: 'Publications',
 });
 
 registerSidebarEntry({
-  name: 'Subscriptions',
+  name: 'cnpg-subscriptions',
   url: '/cnpg/subscriptions',
-  parent: 'ClustersGroup',
+  parent: 'cnpg-clusters-group',
   label: 'Subscriptions',
 });
 
 registerSidebarEntry({
-  name: 'Poolers',
+  name: 'cnpg-poolers',
   url: '/cnpg/poolers',
-  parent: 'CloudNativePG',
+  parent: 'cnpg-root',
   label: 'Poolers',
 });
 
 registerSidebarEntry({
-  name: 'BackupsGroup',
+  name: 'cnpg-backups-group',
   // See the equivalent comment on ImageCatalogsGroup below: without an explicit url this group
   // link would resolve to nothing (its name/first-child-name isn't a registered route name) and
   // never expand, so it's pointed straight at the first child's page instead.
   url: '/cnpg/backups',
-  parent: 'CloudNativePG',
+  parent: 'cnpg-root',
   label: 'Backups',
 });
 
 registerSidebarEntry({
-  name: 'Backups',
+  name: 'cnpg-backups',
   url: '/cnpg/backups',
-  parent: 'BackupsGroup',
+  parent: 'cnpg-backups-group',
   label: 'Backups',
 });
 
 registerSidebarEntry({
-  name: 'ScheduledBackups',
+  name: 'cnpg-scheduled-backups',
   url: '/cnpg/scheduledbackups',
-  parent: 'BackupsGroup',
+  parent: 'cnpg-backups-group',
   label: 'Scheduled Backups',
 });
 
 registerSidebarEntry({
-  name: 'ObjectStores',
+  name: 'cnpg-object-stores',
   url: '/cnpg/objectstores',
-  parent: 'BackupsGroup',
+  parent: 'cnpg-backups-group',
   label: 'Object Stores',
 });
 
 registerSidebarEntry({
-  name: 'ImageCatalogsGroup',
+  name: 'cnpg-image-catalogs-group',
   // Without an explicit url, Headlamp's SidebarItem falls back to resolving a route named after
   // this entry (or its first child's sidebar-entry name), not the actual registered route name —
   // and our routes are deliberately prefixed (e.g. 'CNPG Image Catalogs', see CLAUDE.md) to dodge
@@ -148,27 +153,27 @@ registerSidebarEntry({
   // that never expands. Pointing it straight at the first child's page, like the top-level
   // 'CloudNativePG' entry does, fixes both problems at once.
   url: '/cnpg/imagecatalogs',
-  parent: 'CloudNativePG',
+  parent: 'cnpg-root',
   label: 'Image Catalogs',
 });
 
 registerSidebarEntry({
-  name: 'ImageCatalogs',
+  name: 'cnpg-image-catalogs',
   url: '/cnpg/imagecatalogs',
-  parent: 'ImageCatalogsGroup',
+  parent: 'cnpg-image-catalogs-group',
   label: 'ImageCatalogs',
 });
 
 registerSidebarEntry({
-  name: 'ClusterImageCatalogs',
+  name: 'cnpg-cluster-image-catalogs',
   url: '/cnpg/clusterimagecatalogs',
-  parent: 'ImageCatalogsGroup',
+  parent: 'cnpg-image-catalogs-group',
   label: 'ClusterImageCatalogs',
 });
 
 registerRoute({
   path: '/cnpg/status',
-  sidebar: 'Status',
+  sidebar: 'cnpg-status',
   name: 'CNPG Status',
   exact: true,
   component: () => <OperatorStatus />,
@@ -176,7 +181,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/clusters',
-  sidebar: 'Clusters',
+  sidebar: 'cnpg-clusters',
   // Route "name" must be unique across Headlamp (built-in and plugins) — 'Cluster'/'cluster'
   // collides with Headlamp's own multi-cluster context route, so these are prefixed.
   name: 'CNPG Clusters',
@@ -188,7 +193,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/clusters/:namespace/:name',
-  sidebar: 'Clusters',
+  sidebar: 'cnpg-clusters',
   name: 'CNPG Cluster',
   exact: true,
   component: () => <ClusterDetail />,
@@ -196,7 +201,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/databases',
-  sidebar: 'Databases',
+  sidebar: 'cnpg-databases',
   name: 'CNPG Databases',
   exact: true,
   component: () => <DatabasesList />,
@@ -204,7 +209,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/databases/:namespace/:name',
-  sidebar: 'Databases',
+  sidebar: 'cnpg-databases',
   name: 'CNPG Database',
   exact: true,
   component: () => <DatabaseDetail />,
@@ -212,7 +217,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/databaseroles',
-  sidebar: 'DatabaseRoles',
+  sidebar: 'cnpg-database-roles',
   name: 'CNPG Database Roles',
   exact: true,
   component: () => <DatabaseRolesList />,
@@ -220,7 +225,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/databaseroles/:namespace/:name',
-  sidebar: 'DatabaseRoles',
+  sidebar: 'cnpg-database-roles',
   name: 'CNPG Database Role',
   exact: true,
   component: () => <DatabaseRoleDetail />,
@@ -228,7 +233,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/poolers',
-  sidebar: 'Poolers',
+  sidebar: 'cnpg-poolers',
   name: 'CNPG Poolers',
   exact: true,
   component: () => <PoolersList />,
@@ -236,7 +241,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/poolers/:namespace/:name',
-  sidebar: 'Poolers',
+  sidebar: 'cnpg-poolers',
   name: 'CNPG Pooler',
   exact: true,
   component: () => <PoolerDetail />,
@@ -244,7 +249,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/objectstores',
-  sidebar: 'ObjectStores',
+  sidebar: 'cnpg-object-stores',
   name: 'CNPG Object Stores',
   exact: true,
   component: () => <ObjectStoresList />,
@@ -252,7 +257,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/objectstores/:namespace/:name',
-  sidebar: 'ObjectStores',
+  sidebar: 'cnpg-object-stores',
   name: 'CNPG Object Store',
   exact: true,
   component: () => <ObjectStoreDetail />,
@@ -260,7 +265,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/backups',
-  sidebar: 'Backups',
+  sidebar: 'cnpg-backups',
   name: 'CNPG Backups',
   exact: true,
   component: () => <BackupsList />,
@@ -268,7 +273,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/backups/:namespace/:name',
-  sidebar: 'Backups',
+  sidebar: 'cnpg-backups',
   name: 'CNPG Backup',
   exact: true,
   component: () => <BackupDetail />,
@@ -276,7 +281,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/scheduledbackups',
-  sidebar: 'ScheduledBackups',
+  sidebar: 'cnpg-scheduled-backups',
   name: 'CNPG Scheduled Backups',
   exact: true,
   component: () => <ScheduledBackupsList />,
@@ -284,7 +289,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/scheduledbackups/:namespace/:name',
-  sidebar: 'ScheduledBackups',
+  sidebar: 'cnpg-scheduled-backups',
   name: 'CNPG Scheduled Backup',
   exact: true,
   component: () => <ScheduledBackupDetail />,
@@ -292,7 +297,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/publications',
-  sidebar: 'Publications',
+  sidebar: 'cnpg-publications',
   name: 'CNPG Publications',
   exact: true,
   component: () => <PublicationsList />,
@@ -300,7 +305,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/publications/:namespace/:name',
-  sidebar: 'Publications',
+  sidebar: 'cnpg-publications',
   name: 'CNPG Publication',
   exact: true,
   component: () => <PublicationDetail />,
@@ -308,7 +313,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/subscriptions',
-  sidebar: 'Subscriptions',
+  sidebar: 'cnpg-subscriptions',
   name: 'CNPG Subscriptions',
   exact: true,
   component: () => <SubscriptionsList />,
@@ -316,7 +321,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/subscriptions/:namespace/:name',
-  sidebar: 'Subscriptions',
+  sidebar: 'cnpg-subscriptions',
   name: 'CNPG Subscription',
   exact: true,
   component: () => <SubscriptionDetail />,
@@ -324,7 +329,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/imagecatalogs',
-  sidebar: 'ImageCatalogs',
+  sidebar: 'cnpg-image-catalogs',
   name: 'CNPG Image Catalogs',
   exact: true,
   component: () => <ImageCatalogsList />,
@@ -332,7 +337,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/imagecatalogs/:namespace/:name',
-  sidebar: 'ImageCatalogs',
+  sidebar: 'cnpg-image-catalogs',
   name: 'CNPG Image Catalog',
   exact: true,
   component: () => <ImageCatalogDetail />,
@@ -340,7 +345,7 @@ registerRoute({
 
 registerRoute({
   path: '/cnpg/clusterimagecatalogs',
-  sidebar: 'ClusterImageCatalogs',
+  sidebar: 'cnpg-cluster-image-catalogs',
   name: 'CNPG Cluster Image Catalogs',
   exact: true,
   component: () => <ClusterImageCatalogsList />,
@@ -350,7 +355,7 @@ registerRoute({
 // official cert-manager plugin.
 registerRoute({
   path: '/cnpg/clusterimagecatalogs/:name',
-  sidebar: 'ClusterImageCatalogs',
+  sidebar: 'cnpg-cluster-image-catalogs',
   name: 'CNPG Cluster Image Catalog',
   exact: true,
   component: () => <ClusterImageCatalogDetail />,
