@@ -4,6 +4,7 @@ import {
   ConditionsTable,
   DateLabel,
   DetailsGrid,
+  NameValueTable,
   ResourceLink,
   SectionBox,
   SimpleTable,
@@ -11,6 +12,7 @@ import {
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { useHistory, useParams } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
+import { FailoverQuorum } from '../../resources/failoverQuorum';
 import { Pooler } from '../../resources/pooler';
 import {
   launchLogs,
@@ -247,9 +249,7 @@ function PoolersSection({ cluster }: { cluster: Cluster }) {
             // so the default lookup fails silently and needs this explicit override. Pod/PVC
             // links elsewhere in this file don't need it since those are core Headlamp types
             // whose routes are already registered under their bare kind name.
-            getter: (pooler: Pooler) => (
-              <ResourceLink resource={pooler} routeName="CNPG Pooler" />
-            ),
+            getter: (pooler: Pooler) => <ResourceLink resource={pooler} routeName="CNPG Pooler" />,
           },
           {
             label: 'Type',
@@ -269,6 +269,47 @@ function PoolersSection({ cluster }: { cluster: Cluster }) {
           },
         ]}
         data={poolers ?? []}
+      />
+    </SectionBox>
+  );
+}
+
+function FailoverQuorumSection({ cluster }: { cluster: Cluster }) {
+  // CNPG maintains at most one FailoverQuorum per Cluster, in the same namespace and under the
+  // same name, and deletes it as soon as quorum-based failover is switched off. So a 404 here is
+  // the ordinary "not enabled" case, not an error worth showing — render nothing rather than
+  // putting an empty section on every cluster page.
+  const [quorum] = FailoverQuorum.useGet(cluster.getName(), cluster.getNamespace(), {
+    cluster: cluster.cluster,
+  });
+
+  if (!quorum) {
+    return null;
+  }
+
+  const standbyNames = quorum.standbyNames;
+
+  return (
+    <SectionBox title="Failover Quorum">
+      <NameValueTable
+        rows={[
+          {
+            name: 'Method',
+            value: quorum.method ?? '-',
+          },
+          {
+            name: 'Sync Standbys Required',
+            value: quorum.standbyNumber ?? '-',
+          },
+          {
+            name: 'Reporting Primary',
+            value: quorum.primary ?? '-',
+          },
+          {
+            name: 'Candidate Standbys',
+            value: standbyNames.length > 0 ? standbyNames.join(', ') : '-',
+          },
+        ]}
       />
     </SectionBox>
   );
@@ -441,6 +482,10 @@ export function ClusterDetail() {
           {
             id: 'poolers',
             section: <PoolersSection cluster={item} />,
+          },
+          {
+            id: 'failoverQuorum',
+            section: <FailoverQuorumSection cluster={item} />,
           },
           {
             id: 'conditions',
