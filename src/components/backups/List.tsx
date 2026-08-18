@@ -1,8 +1,10 @@
 import { Router } from '@kinvolk/headlamp-plugin/lib';
 import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import { useLocation } from 'react-router-dom';
 import { Backup } from '../../resources/backup';
+import { backupPhaseSeverity } from '../../resources/status';
 import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchBackupCreate } from './Create';
 
@@ -10,21 +12,23 @@ const { createRouteURL } = Router;
 
 export function BackupPhaseLabel({ backup }: { backup: Backup }) {
   const phase = backup.phase;
-  switch (phase) {
-    case 'completed':
-      return <StatusLabel status="success">{phase}</StatusLabel>;
-    case 'failed':
-    case 'walArchivingFailing':
-    case 'invalid backup definition':
-      return <StatusLabel status="error">{phase}</StatusLabel>;
-    case 'pending':
-    case 'started':
-    case 'running':
-    case 'finalizing':
-      return <StatusLabel status="warning">{phase}</StatusLabel>;
-    default:
-      return <StatusLabel status="">{phase ?? '-'}</StatusLabel>;
+  const label = backupPhaseStatusLabel(phase);
+  // CNPG's own `kubectl get backups` prints an Error column next to Phase, because a bare "failed"
+  // chip gives an operator nothing to act on. Surface that same text on hover rather than making
+  // them open the detail page to find out why. Mirrors DatabaseAppliedLabel, which already inlines
+  // status.message on failure.
+  if (backup.error) {
+    return (
+      <Tooltip title={backup.error}>
+        <span>{label}</span>
+      </Tooltip>
+    );
   }
+  return label;
+}
+
+function backupPhaseStatusLabel(phase: string | undefined) {
+  return <StatusLabel status={backupPhaseSeverity(phase)}>{phase ?? '-'}</StatusLabel>;
 }
 
 export function BackupsList() {
