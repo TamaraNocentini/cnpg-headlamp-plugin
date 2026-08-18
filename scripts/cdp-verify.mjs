@@ -1,0 +1,239 @@
+#!/usr/bin/env node
+/**
+ * Live-load smoke check for this plugin, driven over the Chrome DevTools Protocol.
+ *
+ * A green `tsc` / `lint` / `build` does not prove a Headlamp plugin loads. A value imported from a
+ * path that isn't externalized at runtime resolves to `undefined` and throws on load, while the
+ * build stays green — and a wrong `sidebar:` reference doesn't throw at all, it just silently
+ * stops highlighting the entry. Only loading the plugin in a real Headlamp catches either.
+ *
+ * This talks to Headlamp's DevTools endpoint directly (HTTP + WebSocket on :9222) using node's
+ * built-in WebSocket, so it needs no dependencies.
+ *
+ * Usage:
+ *   1. npm start                                   # watch build, deploys into Headlamp
+ *   2. in the Headlamp checkout:
+ *      npm run start:with-app:debug                # backend :4466, vite :3000, Electron :9222
+ *   3. node scripts/cdp-verify.mjs [cluster-name]  # default: kind-headlamp-test
+ *                                                  # or set HEADLAMP_CLUSTER
+ *
+ * Exits non-zero if the plugin failed to load or a route rendered nothing.
+ */
+
+const CDP_HTTP = process.env.CDP_URL || 'http://localhost:9222';
+const CLUSTER = process.argv[2] || process.env.HEADLAMP_CLUSTER || 'kind-headlamp-test';
+
+const targets = await (await fetch(`${CDP_HTTP}/json`)).json();
+const page = targets.find(t => t.type === 'page');
+if (!page) {
+  console.error(
+    `No page target on ${CDP_HTTP} — is Headlamp running with --remote-debugging-port?`
+  );
+  process.exit(1);
+}
+
+const ws = new WebSocket(page.webSocketDebuggerUrl);
+let nextId = 1;
+const pending = new Map();
+const consoleEntries = [];
+const exceptions = [];
+
+ws.addEventListener('message', ev => {
+  const msg = JSON.parse(ev.data);
+  if (msg.id && pending.has(msg.id)) {
+    const { resolve, reject } = pending.get(msg.id);
+    pending.delete(msg.id);
+    msg.error ? reject(new Error(JSON.stringify(msg.error))) : resolve(msg.result);
+    return;
+  }
+  if (msg.method === 'Runtime.consoleAPICalled') {
+    consoleEntries.push({
+      level: msg.params.type,
+      text: msg.params.args.map(a => a.value ?? a.description ?? a.type).join(' '),
+    });
+  }
+  if (msg.method === 'Runtime.exceptionThrown') {
+    const d = msg.params.exceptionDetails;
+    exceptions.push(d.exception?.description ?? d.text);
+  }
+  if (msg.method === 'Log.entryAdded') {
+    consoleEntries.push({ level: msg.params.entry.level, text: msg.params.entry.text });
+  }
+});
+
+const send = (method, params = {}) =>
+  new Promise((resolve, reject) => {
+    const id = nextId++;
+    pending.set(id, { resolve, reject });
+    ws.send(JSON.stringify({ id, method, params }));
+  });
+
+const evaluate = async expression => {
+  const r = await send('Runtime.evaluate', {
+    expression,
+    returnByValue: true,
+    awaitPromise: true,
+  });
+  if (r.exceptionDetails) {
+    throw new Error(r.exceptionDetails.exception?.description ?? 'evaluate threw');
+  }
+  return r.result.value;
+};
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+await new Promise(r => ws.addEventListener('open', r, { once: true }));
+
+await send('Runtime.enable');
+await send('Log.enable');
+await send('Page.enable');
+
+// Reload so plugin load-time console output is captured from the start.
+await send('Page.reload', { ignoreCache: true });
+await sleep(9000);
+
+const routes = [
+  ['Status', `/c/${CLUSTER}/cnpg/status`],
+  ['Clusters list', `/c/${CLUSTER}/cnpg/clusters`],
+  ['Backups list', `/c/${CLUSTER}/cnpg/backups`],
+  ['Databases list', `/c/${CLUSTER}/cnpg/databases`],
+  ['Poolers list', `/c/${CLUSTER}/cnpg/poolers`],
+  ['ScheduledBackups list', `/c/${CLUSTER}/cnpg/scheduledbackups`],
+  ['Publications list', `/c/${CLUSTER}/cnpg/publications`],
+  ['Subscriptions list', `/c/${CLUSTER}/cnpg/subscriptions`],
+  ['DatabaseRoles list', `/c/${CLUSTER}/cnpg/databaseroles`],
+  ['ImageCatalogs list', `/c/${CLUSTER}/cnpg/imagecatalogs`],
+  ['ClusterImageCatalogs list', `/c/${CLUSTER}/cnpg/clusterimagecatalogs`],
+  ['ObjectStores list', `/c/${CLUSTER}/cnpg/objectstores`],
+];
+
+console.log('=== SIDEBAR ===');
+// Headlamp renders sidebar entries as <button>, not <a>, and the collapsed rail duplicates them —
+// so match on the nav that actually contains the plugin's entries and read Mui-selected off the
+// buttons. An `a[href]` probe finds nothing here, including for Headlamp's own entries.
+const sidebar = await evaluate(`(() => {
+  const nav = Array.from(document.querySelectorAll('nav'))
+    .find(n => /Postgres Clusters/.test(n.innerText || ''));
+  if (!nav) return 'plugin sidebar entries NOT FOUND';
+  const seen = new Set();
+  const out = [];
+  nav.querySelectorAll('button').forEach(b => {
+    const text = (b.innerText || '').replace(/\\n/g, ' ').trim();
+    if (!text || seen.has(text)) return;
+    seen.add(text);
+    out.push(/Mui-selected/.test((b.className || '').toString()) ? text + ' [selected]' : text);
+  });
+  return out.join(' | ');
+})()`);
+console.log(sidebar);
+
+console.log('\n=== ROUTES ===');
+const emptyRoutes = [];
+for (const [label, path] of routes) {
+  await evaluate(`window.location.hash = ${JSON.stringify('#' + path)}`);
+  await sleep(2600);
+  const info = await evaluate(`(() => {
+    const hasSpinner = !!document.querySelector('[role="progressbar"]');
+    const h = document.querySelector('h1, h2, [class*="SectionHeader"]');
+    const rows = document.querySelectorAll('table tbody tr').length;
+    const nav = Array.from(document.querySelectorAll('nav'))
+      .find(n => /Postgres Clusters/.test(n.innerText || ''));
+    const highlighted = nav
+      ? [...new Set(Array.from(nav.querySelectorAll('button'))
+          .filter(b => /Mui-selected/.test((b.className || '').toString()))
+          .map(b => (b.innerText || '').replace(/\\n/g, ' ').trim()))]
+      : [];
+    const sections = Array.from(document.querySelectorAll('h2, h3, [class*="SectionBox"] h6'))
+      .map(e => (e.textContent || '').trim()).filter(Boolean);
+    return JSON.stringify({
+      heading: h ? h.textContent.trim().slice(0, 40) : null,
+      rows, hasSpinner,
+      highlighted,
+      sections: sections.slice(0, 14),
+    });
+  })()`);
+  console.log(`\n-- ${label}  [${path}]`);
+  console.log('   ' + info);
+  if (!JSON.parse(info).heading) {
+    emptyRoutes.push(label);
+  }
+}
+
+// A Cluster detail page exercises the most code (sections, related-resource lookups), so visit a
+// real one rather than a fixed name — whichever the list happens to hold.
+console.log('\n=== CLUSTER DETAIL (first cluster in the list) ===');
+await evaluate(`window.location.hash = '#/c/${CLUSTER}/cnpg/clusters'`);
+await sleep(3000);
+const detailHref = await evaluate(`(() => {
+  const a = Array.from(document.querySelectorAll('a[href]'))
+    .find(x => /\\/cnpg\\/clusters\\/[^/]+\\/[^/]+$/.test(x.getAttribute('href') || ''));
+  return a ? a.getAttribute('href') : null;
+})()`);
+if (!detailHref) {
+  console.log('   (no clusters in this namespace — detail page not exercised)');
+} else {
+  await evaluate(`window.location.hash = ${JSON.stringify(detailHref.replace(/^#/, '#'))}`);
+  await sleep(3500);
+  console.log(
+    '   ' +
+      (await evaluate(`(() => {
+    const h = document.querySelector('h1, h2');
+    const sections = Array.from(document.querySelectorAll('h2, h3, [class*="SectionBox"] h6'))
+      .map(e => (e.textContent || '').trim()).filter(Boolean);
+    return JSON.stringify({
+      href: ${JSON.stringify(detailHref)},
+      heading: h ? h.textContent.trim().slice(0, 40) : null,
+      sections: [...new Set(sections)].slice(0, 14),
+    });
+  })()`))
+  );
+}
+
+console.log('\n=== A11Y: unnamed interactive controls ===');
+const a11y = await evaluate(`(() => {
+  const bad = [];
+  document.querySelectorAll('button, a, [role="button"]').forEach(el => {
+    const name = (el.getAttribute('aria-label') || el.textContent || el.title || '').trim();
+    if (!name) bad.push(el.outerHTML.slice(0, 110));
+  });
+  return JSON.stringify({ count: bad.length, samples: bad.slice(0, 6) }, null, 1);
+})()`);
+console.log(a11y);
+
+console.log('\n=== CONSOLE (errors/warnings) ===');
+const noisy = consoleEntries.filter(e => /error|warning/i.test(e.level));
+console.log(
+  noisy.length ? noisy.map(e => `[${e.level}] ${e.text}`.slice(0, 260)).join('\n') : '(none)'
+);
+
+console.log('\n=== PLUGIN EXECUTION ERRORS ===');
+const pluginErrors = consoleEntries
+  .concat(exceptions.map(t => ({ level: 'exception', text: t })))
+  .filter(e => /Plugin execution error|cnpg/i.test(e.text));
+console.log(
+  pluginErrors.length
+    ? pluginErrors.map(e => `[${e.level}] ${e.text}`.slice(0, 300)).join('\n')
+    : '(none)'
+);
+
+console.log('\n=== UNCAUGHT EXCEPTIONS ===');
+console.log(exceptions.length ? exceptions.map(e => e.slice(0, 260)).join('\n---\n') : '(none)');
+
+ws.close();
+
+// Only this plugin's own load failures should fail the run — other installed plugins share the
+// console, and their crashes are not this plugin's problem.
+const pluginName = 'cnpg-headlamp-plugin';
+const ownFailure = consoleEntries
+  .concat(exceptions.map(t => ({ level: 'exception', text: t })))
+  .find(e => new RegExp(`Plugin execution error in [^\\n]*${pluginName}`).test(e.text));
+
+if (ownFailure) {
+  console.error(`\nFAILED: ${pluginName} did not load — ${ownFailure.text.slice(0, 200)}`);
+  process.exit(1);
+}
+if (emptyRoutes.length) {
+  console.error(`\nFAILED: route(s) rendered no content: ${emptyRoutes.join(', ')}`);
+  process.exit(1);
+}
+console.log(`\nOK: ${pluginName} loaded, all routes rendered.`);
