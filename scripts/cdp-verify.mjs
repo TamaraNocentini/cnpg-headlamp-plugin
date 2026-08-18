@@ -107,18 +107,41 @@ const routes = [
   ['ObjectStores list', `/c/${CLUSTER}/cnpg/objectstores`],
 ];
 
+// Headlamp only renders this plugin's sidebar tree once inside a cluster context — a reload can
+// land back on the cluster chooser, where the in-cluster sidebar (and thus these entries) isn't in
+// the DOM at all yet. Navigate in before checking, same as the first ROUTES iteration below does.
+await evaluate(`window.location.hash = ${JSON.stringify('#/c/' + CLUSTER + '/cnpg/status')}`);
+await sleep(2600);
+
 console.log('=== SIDEBAR ===');
-// Headlamp renders sidebar entries as <button>, not <a>, and the collapsed rail duplicates them —
-// so match on the nav that actually contains the plugin's entries and read Mui-selected off the
-// buttons. An `a[href]` probe finds nothing here, including for Headlamp's own entries.
+// Sidebar entries render via ListItemButton with `component: renderLink` (ListItemLink.js), which
+// swaps the root DOM tag to a react-router Link — i.e. an <a href>, not a <button>. Only the
+// surrounding DefaultLinkArea controls (Create/version/collapse) are real <button>s, so a
+// button-only query finds those three and none of the actual nav entries — ours or Headlamp's own.
+// The collapsed icon-only rail additionally drops the visible <ListItemText> entirely (SidebarItem
+// passes `primary: fullWidth ? label : ''`) and keeps the label only as `aria-label` — so fall back
+// to aria-label there too.
+const labelOf = `b => (b.getAttribute('aria-label') || b.innerText || '').replace(/\\n/g, ' ').trim()`;
+const itemSelector = `'a[href], button'`;
 const sidebar = await evaluate(`(() => {
-  const nav = Array.from(document.querySelectorAll('nav'))
-    .find(n => /Postgres Clusters/.test(n.innerText || ''));
-  if (!nav) return 'plugin sidebar entries NOT FOUND';
+  const labelOf = ${labelOf};
+  const navs = Array.from(document.querySelectorAll('nav'));
+  const nav = navs.find(n => Array.from(n.querySelectorAll(${itemSelector})).some(b => labelOf(b) === 'Postgres Clusters'));
+  if (!nav) {
+    // Diagnostics: what IS actually in the DOM at this point, so a mismatch (wrong label text,
+    // wrong element type, plugin entries missing entirely, ...) is visible instead of guessed at.
+    const debug = navs.map((n, i) => ({
+      nav: i,
+      navAriaLabel: n.getAttribute('aria-label'),
+      itemCount: n.querySelectorAll(${itemSelector}).length,
+      labels: Array.from(n.querySelectorAll(${itemSelector})).slice(0, 40).map(labelOf).filter(Boolean),
+    }));
+    return 'plugin sidebar entries NOT FOUND\\n' + JSON.stringify(debug, null, 1);
+  }
   const seen = new Set();
   const out = [];
-  nav.querySelectorAll('button').forEach(b => {
-    const text = (b.innerText || '').replace(/\\n/g, ' ').trim();
+  nav.querySelectorAll(${itemSelector}).forEach(b => {
+    const text = labelOf(b);
     if (!text || seen.has(text)) return;
     seen.add(text);
     out.push(/Mui-selected/.test((b.className || '').toString()) ? text + ' [selected]' : text);
@@ -136,12 +159,13 @@ for (const [label, path] of routes) {
     const hasSpinner = !!document.querySelector('[role="progressbar"]');
     const h = document.querySelector('h1, h2, [class*="SectionHeader"]');
     const rows = document.querySelectorAll('table tbody tr').length;
+    const labelOf = ${labelOf};
     const nav = Array.from(document.querySelectorAll('nav'))
-      .find(n => /Postgres Clusters/.test(n.innerText || ''));
+      .find(n => Array.from(n.querySelectorAll(${itemSelector})).some(b => labelOf(b) === 'Postgres Clusters'));
     const highlighted = nav
-      ? [...new Set(Array.from(nav.querySelectorAll('button'))
+      ? [...new Set(Array.from(nav.querySelectorAll(${itemSelector}))
           .filter(b => /Mui-selected/.test((b.className || '').toString()))
-          .map(b => (b.innerText || '').replace(/\\n/g, ' ').trim()))]
+          .map(labelOf))]
       : [];
     const sections = Array.from(document.querySelectorAll('h2, h3, [class*="SectionBox"] h6'))
       .map(e => (e.textContent || '').trim()).filter(Boolean);
