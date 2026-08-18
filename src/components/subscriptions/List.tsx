@@ -1,21 +1,16 @@
 import { Router } from '@kinvolk/headlamp-plugin/lib';
-import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Subscription } from '../../resources/subscription';
+import { AppliedStatusLabel } from '../common/AppliedStatusLabel';
 import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchSubscriptionCreate } from './Create';
 
 const { createRouteURL } = Router;
 
 export function SubscriptionAppliedLabel({ subscription }: { subscription: Subscription }) {
-  if (subscription.applied === true) {
-    return <StatusLabel status="success">Applied</StatusLabel>;
-  }
-  if (subscription.applied === false) {
-    return <StatusLabel status="error">{subscription.message ?? 'Not applied'}</StatusLabel>;
-  }
-  return <StatusLabel status="">Unknown</StatusLabel>;
+  return <AppliedStatusLabel applied={subscription.applied} message={subscription.message} />;
 }
 
 function subscriptionColumns(): any[] {
