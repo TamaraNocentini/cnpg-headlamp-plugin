@@ -1,21 +1,16 @@
 import { Router } from '@kinvolk/headlamp-plugin/lib';
-import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { DatabaseRole } from '../../resources/databaseRole';
+import { AppliedStatusLabel } from '../common/AppliedStatusLabel';
 import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchDatabaseRoleCreate } from './Create';
 
 const { createRouteURL } = Router;
 
 export function DatabaseRoleAppliedLabel({ databaseRole }: { databaseRole: DatabaseRole }) {
-  if (databaseRole.applied === true) {
-    return <StatusLabel status="success">Applied</StatusLabel>;
-  }
-  if (databaseRole.applied === false) {
-    return <StatusLabel status="error">{databaseRole.message ?? 'Not applied'}</StatusLabel>;
-  }
-  return <StatusLabel status="">Unknown</StatusLabel>;
+  return <AppliedStatusLabel applied={databaseRole.applied} message={databaseRole.message} />;
 }
 
 function databaseRoleColumns(): any[] {

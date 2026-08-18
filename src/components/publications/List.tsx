@@ -1,21 +1,16 @@
 import { Router } from '@kinvolk/headlamp-plugin/lib';
-import { ResourceListView, StatusLabel } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { ResourceListView } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Button from '@mui/material/Button';
 import { useLocation } from 'react-router-dom';
 import { Publication } from '../../resources/publication';
+import { AppliedStatusLabel } from '../common/AppliedStatusLabel';
 import { AuthDisabledButton } from '../common/AuthDisabledButton';
 import { launchPublicationCreate } from './Create';
 
 const { createRouteURL } = Router;
 
 export function PublicationAppliedLabel({ publication }: { publication: Publication }) {
-  if (publication.applied === true) {
-    return <StatusLabel status="success">Applied</StatusLabel>;
-  }
-  if (publication.applied === false) {
-    return <StatusLabel status="error">{publication.message ?? 'Not applied'}</StatusLabel>;
-  }
-  return <StatusLabel status="">Unknown</StatusLabel>;
+  return <AppliedStatusLabel applied={publication.applied} message={publication.message} />;
 }
 
 export function PublicationTargetSummary({ publication }: { publication: Publication }) {
