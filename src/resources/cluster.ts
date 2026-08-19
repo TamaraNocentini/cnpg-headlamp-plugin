@@ -230,7 +230,7 @@ export class Cluster extends KubeObject<CnpgCluster> {
   }
 
   get instances(): number {
-    return this.status.instances ?? this.spec.instances ?? 0;
+    return this.spec.instances ?? 0;
   }
 
   get readyInstances(): number {
