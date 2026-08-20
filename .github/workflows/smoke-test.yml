@@ -100,6 +100,12 @@ jobs:
 
       - name: Start Headlamp (backend :4466, frontend :3000)
         working-directory: headlamp
+        env:
+          # backend:start hardcodes HEADLAMP_BACKEND_TOKEN=headlamp. Electron normally fetches this
+          # token via IPC and injects it into the frontend automatically; running frontend+backend
+          # separately (no Electron) needs it set explicitly or every backend API call 401s and the
+          # app never leaves the Home/landing page — see getHeadlampAPIHeaders.ts in the Headlamp repo.
+          REACT_APP_HEADLAMP_BACKEND_TOKEN: headlamp
         run: |
           nohup npm run start > ../headlamp.log 2>&1 &
           disown
