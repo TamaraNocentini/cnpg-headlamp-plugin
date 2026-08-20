@@ -82,6 +82,20 @@ const evaluate = async expression => {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// Polls `conditionExpr` (a JS expression evaluated in the page) until it's truthy, instead of
+// hoping a fixed sleep was long enough. Headlamp's sidebar expand state is Redux-driven (a
+// `setSidebarSelected` dispatch after the route mounts), and how long that takes depends on
+// machine load — CI runners are slower and less consistent than a local dev box, so a fixed sleep
+// that's comfortable locally can still race the render there.
+const waitFor = async (conditionExpr, { timeoutMs = 15000, intervalMs = 300 } = {}) => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await evaluate(conditionExpr)) return true;
+    await sleep(intervalMs);
+  }
+  return false;
+};
+
 await new Promise(r => ws.addEventListener('open', r, { once: true }));
 
 await send('Runtime.enable');
@@ -111,9 +125,7 @@ const routes = [
 // land back on the cluster chooser, where the in-cluster sidebar (and thus these entries) isn't in
 // the DOM at all yet. Navigate in before checking, same as the first ROUTES iteration below does.
 await evaluate(`window.location.hash = ${JSON.stringify('#/c/' + CLUSTER + '/cnpg/status')}`);
-await sleep(2600);
 
-console.log('=== SIDEBAR ===');
 // Sidebar entries render via ListItemButton with `component: renderLink` (ListItemLink.js), which
 // swaps the root DOM tag to a react-router Link — i.e. an <a href>, not a <button>. Only the
 // surrounding DefaultLinkArea controls (Create/version/collapse) are real <button>s, so a
@@ -123,6 +135,22 @@ console.log('=== SIDEBAR ===');
 // to aria-label there too.
 const labelOf = `b => (b.getAttribute('aria-label') || b.innerText || '').replace(/\\n/g, ' ').trim()`;
 const itemSelector = `'a[href], button'`;
+
+// The top-level 'CloudNativePG' entry is always in the DOM, but its children (including 'Postgres
+// Clusters') only mount once Redux has processed the route's sidebar selection and marked it
+// expanded (Headlamp's sidebar Collapse uses unmountOnExit) — that lags the URL change, so poll for
+// the actual target label rather than guessing a fixed delay.
+const sidebarReady = await waitFor(`(() => {
+  const labelOf = ${labelOf};
+  return Array.from(document.querySelectorAll('nav')).some(n =>
+    Array.from(n.querySelectorAll(${itemSelector})).some(b => labelOf(b) === 'Postgres Clusters')
+  );
+})()`);
+if (!sidebarReady) {
+  console.error('Timed out waiting for the "Postgres Clusters" sidebar entry to appear.');
+}
+
+console.log('=== SIDEBAR ===');
 const sidebar = await evaluate(`(() => {
   const labelOf = ${labelOf};
   const navs = Array.from(document.querySelectorAll('nav'));
@@ -154,7 +182,9 @@ console.log('\n=== ROUTES ===');
 const emptyRoutes = [];
 for (const [label, path] of routes) {
   await evaluate(`window.location.hash = ${JSON.stringify('#' + path)}`);
-  await sleep(2600);
+  await waitFor(`!!document.querySelector('h1, h2, [class*="SectionHeader"]')`, {
+    timeoutMs: 10000,
+  });
   const info = await evaluate(`(() => {
     const hasSpinner = !!document.querySelector('[role="progressbar"]');
     const h = document.querySelector('h1, h2, [class*="SectionHeader"]');
@@ -187,7 +217,7 @@ for (const [label, path] of routes) {
 // real one rather than a fixed name — whichever the list happens to hold.
 console.log('\n=== CLUSTER DETAIL (first cluster in the list) ===');
 await evaluate(`window.location.hash = '#/c/${CLUSTER}/cnpg/clusters'`);
-await sleep(3000);
+await waitFor(`!!document.querySelector('h1, h2, [class*="SectionHeader"]')`, { timeoutMs: 10000 });
 const detailHref = await evaluate(`(() => {
   const a = Array.from(document.querySelectorAll('a[href]'))
     .find(x => /\\/cnpg\\/clusters\\/[^/]+\\/[^/]+$/.test(x.getAttribute('href') || ''));
@@ -197,7 +227,7 @@ if (!detailHref) {
   console.log('   (no clusters in this namespace — detail page not exercised)');
 } else {
   await evaluate(`window.location.hash = ${JSON.stringify(detailHref.replace(/^#/, '#'))}`);
-  await sleep(3500);
+  await waitFor(`!!document.querySelector('h1, h2')`, { timeoutMs: 10000 });
   console.log(
     '   ' +
       (await evaluate(`(() => {
