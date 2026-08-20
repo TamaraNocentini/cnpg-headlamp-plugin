@@ -1,0 +1,139 @@
+name: Smoke test
+
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      headlamp-ref:
+        description: 'git ref of kubernetes-sigs/headlamp to check out'
+        default: main
+        required: false
+      cnpg-version:
+        description: 'CloudNativePG operator version to install'
+        default: '1.30.0'
+        required: false
+
+jobs:
+  smoke-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@v4
+
+      - name: Checkout Headlamp
+        uses: actions/checkout@v4
+        with:
+          repository: kubernetes-sigs/headlamp
+          ref: ${{ inputs['headlamp-ref'] || 'main' }}
+          path: headlamp
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: headlamp/backend/go.mod
+
+      - name: Install Headlamp backend + frontend (skip Electron app/tools)
+        working-directory: headlamp
+        run: |
+          npm install
+          npm run frontend:install
+          npm run backend:build
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1
+        with:
+          cluster_name: headlamp-test
+
+      - name: Install CloudNativePG operator
+        env:
+          CNPG_VERSION: ${{ inputs['cnpg-version'] || '1.30.0' }}
+        run: |
+          CNPG_BRANCH="release-${CNPG_VERSION%.*}"
+          kubectl apply --server-side -f \
+            "https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/${CNPG_BRANCH}/releases/cnpg-${CNPG_VERSION}.yaml"
+          kubectl rollout status deployment -n cnpg-system cnpg-controller-manager --timeout=120s
+
+      - name: Create a minimal Cluster (exercises the detail page)
+        run: |
+          kubectl create namespace cnpg-smoke-test
+          cat <<'EOF' | kubectl apply -n cnpg-smoke-test -f -
+          apiVersion: postgresql.cnpg.io/v1
+          kind: Cluster
+          metadata:
+            name: smoke-test
+          spec:
+            instances: 1
+            storage:
+              size: 1Gi
+          EOF
+          # Only wait for the operator to report a first status, not for the instance
+          # to become fully healthy/replicated — the detail page just needs a real object.
+          for i in $(seq 1 30); do
+            phase=$(kubectl get cluster smoke-test -n cnpg-smoke-test -o jsonpath='{.status.phase}' 2>/dev/null)
+            if [ -n "$phase" ]; then
+              echo "Cluster phase: $phase"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for Cluster status"; kubectl describe cluster smoke-test -n cnpg-smoke-test; exit 1
+
+      - name: Build plugin
+        run: |
+          npm ci
+          npm run build
+
+      - name: Deploy plugin build into Headlamp's plugins folder
+        # Mirrors what `headlamp-plugin start` (watch mode) copies on every build — see
+        # copyToPluginsFolder() in @kinvolk/headlamp-plugin/bin/headlamp-plugin.js. Doing it once
+        # here instead of running the watcher is the CI equivalent of "build it once".
+        run: |
+          PLUGIN_NAME=$(node -p "require('./package.json').name.split('/').pop()")
+          DEST="$HOME/.config/Headlamp/plugins/$PLUGIN_NAME"
+          mkdir -p "$DEST"
+          cp -r dist/* "$DEST/"
+          cp package.json "$DEST/"
+
+      - name: Start Headlamp (backend :4466, frontend :3000)
+        working-directory: headlamp
+        run: |
+          nohup npm run start > ../headlamp.log 2>&1 &
+          disown
+
+      - name: Wait for Headlamp frontend
+        run: |
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:3000 >/dev/null; then
+              echo "frontend ready"; exit 0
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for Headlamp frontend"; cat headlamp.log; exit 1
+
+      - name: Start headless Chrome against the frontend (CDP :9222)
+        run: |
+          nohup google-chrome --headless=new --disable-gpu --no-sandbox \
+            --remote-debugging-port=9222 http://localhost:3000 \
+            > chrome.log 2>&1 &
+          disown
+
+      - name: Wait for Chrome DevTools endpoint
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9222/json >/dev/null; then
+              echo "CDP endpoint ready"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Timed out waiting for Chrome DevTools endpoint"; cat chrome.log; exit 1
+
+      - name: Run live-load smoke check
+        run: node scripts/cdp-verify.mjs
+
+      - name: Dump Headlamp logs on failure
+        if: failure()
+        run: cat headlamp.log || true
