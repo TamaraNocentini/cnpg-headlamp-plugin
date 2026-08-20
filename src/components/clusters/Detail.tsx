@@ -28,6 +28,10 @@ const { createRouteURL } = Router;
 
 type Pvc = InstanceType<typeof K8s.ResourceClasses.PersistentVolumeClaim>;
 
+function sortByName<T extends { getName(): string }>(items: T[] | null | undefined): T[] {
+  return [...(items ?? [])].sort((a, b) => a.getName().localeCompare(b.getName()));
+}
+
 function InstanceActions({ pod }: { pod: Pod }) {
   return (
     <>
@@ -118,7 +122,7 @@ function InstancesSection({ cluster }: { cluster: Cluster }) {
             getter: (pod: Pod) => <InstanceActions pod={pod} />,
           },
         ]}
-        data={pods ?? []}
+        data={sortByName(pods)}
       />
     </SectionBox>
   );
@@ -163,7 +167,7 @@ function JobsSection({ cluster }: { cluster: Cluster }) {
             getter: (pod: Pod) => <JobActions pod={pod} />,
           },
         ]}
-        data={pods ?? []}
+        data={sortByName(pods)}
         emptyMessage="No bootstrap jobs running"
       />
     </SectionBox>
@@ -222,7 +226,7 @@ function PvcsSection({ cluster }: { cluster: Cluster }) {
             getter: (pvc: Pvc) => pvc.spec?.storageClassName ?? '-',
           },
         ]}
-        data={pvcs ?? []}
+        data={sortByName(pvcs)}
       />
     </SectionBox>
   );
@@ -268,7 +272,7 @@ function PoolersSection({ cluster }: { cluster: Cluster }) {
             getter: (pooler: Pooler) => <PoolerStatusLabel pooler={pooler} />,
           },
         ]}
-        data={poolers ?? []}
+        data={sortByName(poolers)}
       />
     </SectionBox>
   );
