@@ -136,6 +136,10 @@ await evaluate(`window.location.hash = ${JSON.stringify('#/c/' + CLUSTER + '/cnp
 const labelOf = `b => (b.getAttribute('aria-label') || b.innerText || '').replace(/\\n/g, ' ').trim()`;
 const itemSelector = `'a[href], button'`;
 
+// Collected up front so the sidebar check below can fail the run the same way an empty route does,
+// instead of only logging and letting the script exit 0.
+const emptyRoutes = [];
+
 // The top-level 'CloudNativePG' entry is always in the DOM, but its children (including 'Postgres
 // Clusters') only mount once Redux has processed the route's sidebar selection and marked it
 // expanded (Headlamp's sidebar Collapse uses unmountOnExit) — that lags the URL change, so poll for
@@ -148,6 +152,7 @@ const sidebarReady = await waitFor(`(() => {
 })()`);
 if (!sidebarReady) {
   console.error('Timed out waiting for the "Postgres Clusters" sidebar entry to appear.');
+  emptyRoutes.push('Sidebar (Postgres Clusters entry)');
 }
 
 console.log('=== SIDEBAR ===');
@@ -179,7 +184,6 @@ const sidebar = await evaluate(`(() => {
 console.log(sidebar);
 
 console.log('\n=== ROUTES ===');
-const emptyRoutes = [];
 for (const [label, path] of routes) {
   await evaluate(`window.location.hash = ${JSON.stringify('#' + path)}`);
   await waitFor(`!!document.querySelector('h1, h2, [class*="SectionHeader"]')`, {
