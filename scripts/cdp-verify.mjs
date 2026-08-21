@@ -82,6 +82,20 @@ const evaluate = async expression => {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
+// Polls `conditionExpr` (a JS expression evaluated in the page) until it's truthy, instead of
+// hoping a fixed sleep was long enough. Headlamp's sidebar expand state is Redux-driven (a
+// `setSidebarSelected` dispatch after the route mounts), and how long that takes depends on
+// machine load — CI runners are slower and less consistent than a local dev box, so a fixed sleep
+// that's comfortable locally can still race the render there.
+const waitFor = async (conditionExpr, { timeoutMs = 15000, intervalMs = 300 } = {}) => {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await evaluate(conditionExpr)) return true;
+    await sleep(intervalMs);
+  }
+  return false;
+};
+
 await new Promise(r => ws.addEventListener('open', r, { once: true }));
 
 await send('Runtime.enable');
@@ -111,9 +125,7 @@ const routes = [
 // land back on the cluster chooser, where the in-cluster sidebar (and thus these entries) isn't in
 // the DOM at all yet. Navigate in before checking, same as the first ROUTES iteration below does.
 await evaluate(`window.location.hash = ${JSON.stringify('#/c/' + CLUSTER + '/cnpg/status')}`);
-await sleep(2600);
 
-console.log('=== SIDEBAR ===');
 // Sidebar entries render via ListItemButton with `component: renderLink` (ListItemLink.js), which
 // swaps the root DOM tag to a react-router Link — i.e. an <a href>, not a <button>. Only the
 // surrounding DefaultLinkArea controls (Create/version/collapse) are real <button>s, so a
@@ -123,6 +135,56 @@ console.log('=== SIDEBAR ===');
 // to aria-label there too.
 const labelOf = `b => (b.getAttribute('aria-label') || b.innerText || '').replace(/\\n/g, ' ').trim()`;
 const itemSelector = `'a[href], button'`;
+const HEADING_SELECTOR = 'h1, h2, [class*="SectionHeader"]';
+
+const currentHeading = () =>
+  evaluate(`(() => {
+    const h = document.querySelector('${HEADING_SELECTOR}');
+    return h ? h.textContent.trim() : null;
+  })()`);
+
+// Sets the hash and waits for the page to actually settle on the new route, rather than checking
+// once right after the assignment. `hashchange` fires asynchronously, so the previous route's
+// heading can still be in the DOM on the first poll — waiting only for "a heading exists" can pass
+// immediately against stale content. Waiting for the heading text to change (not just re-appear)
+// catches that, and waiting for the loading spinner to clear too means rows/sections are read from
+// fetched data instead of the pre-fetch state. If this navigates to the route already showing
+// (heading unchanged by design), it harmlessly rides out the timeout — correctness isn't affected,
+// since the already-settled state is what gets read either way.
+const navigateAndSettle = async hash => {
+  const before = await currentHeading();
+  await evaluate(`window.location.hash = ${JSON.stringify(hash)}`);
+  await waitFor(
+    `(() => {
+      const h = document.querySelector('${HEADING_SELECTOR}');
+      const text = h ? h.textContent.trim() : null;
+      const noSpinner = !document.querySelector('[role="progressbar"]');
+      return text !== ${JSON.stringify(before)} && noSpinner;
+    })()`,
+    { timeoutMs: 10000 }
+  );
+};
+
+// Collected up front so the sidebar check below can fail the run the same way an empty route does,
+// instead of only logging and letting the script exit 0.
+const emptyRoutes = [];
+
+// The top-level 'CloudNativePG' entry is always in the DOM, but its children (including 'Postgres
+// Clusters') only mount once Redux has processed the route's sidebar selection and marked it
+// expanded (Headlamp's sidebar Collapse uses unmountOnExit) — that lags the URL change, so poll for
+// the actual target label rather than guessing a fixed delay.
+const sidebarReady = await waitFor(`(() => {
+  const labelOf = ${labelOf};
+  return Array.from(document.querySelectorAll('nav')).some(n =>
+    Array.from(n.querySelectorAll(${itemSelector})).some(b => labelOf(b) === 'Postgres Clusters')
+  );
+})()`);
+if (!sidebarReady) {
+  console.error('Timed out waiting for the "Postgres Clusters" sidebar entry to appear.');
+  emptyRoutes.push('Sidebar (Postgres Clusters entry)');
+}
+
+console.log('=== SIDEBAR ===');
 const sidebar = await evaluate(`(() => {
   const labelOf = ${labelOf};
   const navs = Array.from(document.querySelectorAll('nav'));
@@ -151,13 +213,11 @@ const sidebar = await evaluate(`(() => {
 console.log(sidebar);
 
 console.log('\n=== ROUTES ===');
-const emptyRoutes = [];
 for (const [label, path] of routes) {
-  await evaluate(`window.location.hash = ${JSON.stringify('#' + path)}`);
-  await sleep(2600);
+  await navigateAndSettle('#' + path);
   const info = await evaluate(`(() => {
     const hasSpinner = !!document.querySelector('[role="progressbar"]');
-    const h = document.querySelector('h1, h2, [class*="SectionHeader"]');
+    const h = document.querySelector('${HEADING_SELECTOR}');
     const rows = document.querySelectorAll('table tbody tr').length;
     const labelOf = ${labelOf};
     const nav = Array.from(document.querySelectorAll('nav'))
@@ -186,8 +246,7 @@ for (const [label, path] of routes) {
 // A Cluster detail page exercises the most code (sections, related-resource lookups), so visit a
 // real one rather than a fixed name — whichever the list happens to hold.
 console.log('\n=== CLUSTER DETAIL (first cluster in the list) ===');
-await evaluate(`window.location.hash = '#/c/${CLUSTER}/cnpg/clusters'`);
-await sleep(3000);
+await navigateAndSettle(`#/c/${CLUSTER}/cnpg/clusters`);
 const detailHref = await evaluate(`(() => {
   const a = Array.from(document.querySelectorAll('a[href]'))
     .find(x => /\\/cnpg\\/clusters\\/[^/]+\\/[^/]+$/.test(x.getAttribute('href') || ''));
@@ -196,12 +255,11 @@ const detailHref = await evaluate(`(() => {
 if (!detailHref) {
   console.log('   (no clusters in this namespace — detail page not exercised)');
 } else {
-  await evaluate(`window.location.hash = ${JSON.stringify(detailHref.replace(/^#/, '#'))}`);
-  await sleep(3500);
+  await navigateAndSettle(detailHref.replace(/^#/, '#'));
   console.log(
     '   ' +
       (await evaluate(`(() => {
-    const h = document.querySelector('h1, h2');
+    const h = document.querySelector('${HEADING_SELECTOR}');
     const sections = Array.from(document.querySelectorAll('h2, h3, [class*="SectionBox"] h6'))
       .map(e => (e.textContent || '').trim()).filter(Boolean);
     return JSON.stringify({

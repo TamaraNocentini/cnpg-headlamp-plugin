@@ -100,6 +100,12 @@ jobs:
 
       - name: Start Headlamp (backend :4466, frontend :3000)
         working-directory: headlamp
+        env:
+          # backend:start hardcodes HEADLAMP_BACKEND_TOKEN=headlamp. Electron normally fetches this
+          # token via IPC and injects it into the frontend automatically; running frontend+backend
+          # separately (no Electron) needs it set explicitly or every backend API call 401s and the
+          # app never leaves the Home/landing page — see getHeadlampAPIHeaders.ts in the Headlamp repo.
+          REACT_APP_HEADLAMP_BACKEND_TOKEN: headlamp
         run: |
           nohup npm run start > ../headlamp.log 2>&1 &
           disown
@@ -116,7 +122,14 @@ jobs:
 
       - name: Start headless Chrome against the frontend (CDP :9222)
         run: |
+          # frontend/src/helpers/isElectron.ts detects Electron partly via a user-agent substring
+          # check. Headlamp's Home page (frontend/src/components/App/Home/index.tsx) auto-redirects
+          # to the single configured cluster's generic Overview page whenever !isElectron() and
+          # there's exactly one cluster — exactly this setup — which stomps every hash navigation
+          # this check does before it ever reaches the plugin's own routes. Spoofing the UA sidesteps
+          # that Headlamp-side special case without needing real Electron.
           nohup google-chrome --headless=new --disable-gpu --no-sandbox \
+            --user-agent="Mozilla/5.0 Electron/32.0.0 Chrome Safari" \
             --remote-debugging-port=9222 http://localhost:3000 \
             > chrome.log 2>&1 &
           disown
