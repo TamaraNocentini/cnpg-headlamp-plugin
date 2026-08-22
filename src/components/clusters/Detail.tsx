@@ -23,6 +23,7 @@ import {
 } from '../common/podActions';
 import { PoolerStatusLabel } from '../poolers/List';
 import { launchConnectActivity } from './connect';
+import { SwitchoverAction } from './switchover';
 
 const { createRouteURL } = Router;
 
@@ -32,7 +33,7 @@ function sortByName<T extends { getName(): string }>(items: T[] | null | undefin
   return [...(items ?? [])].sort((a, b) => a.getName().localeCompare(b.getName()));
 }
 
-function InstanceActions({ pod }: { pod: Pod }) {
+function InstanceActions({ cluster, pod }: { cluster: Cluster; pod: Pod }) {
   return (
     <>
       <ActionButton
@@ -45,6 +46,9 @@ function InstanceActions({ pod }: { pod: Pod }) {
         icon="mdi:console"
         onClick={() => launchTerminal(pod)}
       />
+      {pod.getName() !== cluster.currentPrimary && !cluster.isSwitchoverInProgress && (
+        <SwitchoverAction cluster={cluster} pod={pod} />
+      )}
     </>
   );
 }
@@ -119,7 +123,7 @@ function InstancesSection({ cluster }: { cluster: Cluster }) {
           },
           {
             label: 'Actions',
-            getter: (pod: Pod) => <InstanceActions pod={pod} />,
+            getter: (pod: Pod) => <InstanceActions cluster={cluster} pod={pod} />,
           },
         ]}
         data={sortByName(pods)}
