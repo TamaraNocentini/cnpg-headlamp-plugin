@@ -4,7 +4,7 @@ A [Headlamp](https://headlamp.dev/) plugin for managing and visualizing [CloudNa
 
 ## Features
 
-- **Clusters** — list and detail views with a traffic-light health indicator (phase, WAL archiving, last backup), instance roles and synchronous replication warnings, per-instance Postgres logs (filterable, color-coded, live-following), and a `psql` terminal against the primary or any replica. A guided creation form (with live YAML preview) covers instances/HA, storage and tablespaces, backup configuration, volume snapshots, and bootstrap — including bootstrapping a new cluster from an existing backup
+- **Clusters** — list and detail views with a traffic-light health indicator (phase, WAL archiving, last backup), instance roles and synchronous replication warnings, per-instance Postgres logs (filterable, color-coded, live-following), a `psql` terminal against the primary or any replica, and a manual **switchover** action to promote a chosen replica to primary. A guided creation form (with live YAML preview) covers instances/HA, storage and tablespaces, backup configuration, volume snapshots, and bootstrap — including bootstrapping a new cluster from an existing backup
 - **Poolers** (PgBouncer) — list/detail views and a guided creation form
 - **Backups** — on-demand backups with status tracking, created against the Barman Cloud plugin or via volume snapshots (not the deprecated in-tree `barmanObjectStore`)
 - **Scheduled Backups** — graphical cron editor (Daily/Weekly/Monthly, plus a raw-text advanced mode) with a humanized schedule description, and a "trigger now" action

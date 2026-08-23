@@ -46,6 +46,10 @@ CNPG is deprecating its in-tree `barmanObjectStore` integration in favor of the 
 
 Any new UI action that mutates a resource (create, edit, delete, or a bespoke action like switchover) must check RBAC and disable itself — not just hide itself — when the user lacks the required verb, matching the existing pattern (e.g. `src/components/clusters/switchover.tsx`, `src/components/common/AuthDisabledButton.tsx`): wrap the action in `AuthVisible` (from `@kinvolk/headlamp-plugin/lib/CommonComponents`) with the relevant `authVerb`/`subresource`, use its `onAuthResult` callback to track an `allowed` boolean (defaulting to `true` until the check resolves, so the button fails open as a UX nicety — the API call itself is still enforced server-side by RBAC), and render the action `disabled` with an explanatory `Tooltip` when denied. Prefer wrapping with `AuthDisabledButton` for plain MUI buttons; for components that don't accept a bare `disabled` prop (e.g. `ActionButton`, which only takes `iconButtonProps.disabled`), wire the same `AuthVisible`/`allowed`/`Tooltip` pattern in directly as `switchover.tsx` does.
 
+### Update README.md when adding a user-facing feature
+
+When a change adds a significant feature for users (a new resource view, a new action, a new form/workflow), add or update a bullet in the README.md `## Features` section describing it. The README is the plugin's user-facing feature list, not just a dev setup doc, and it drifts out of date if this isn't done alongside the code change.
+
 ## SDK gotchas learned the hard way
 
 These cost real debugging time — check here before re-deriving them:
