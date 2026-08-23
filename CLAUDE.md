@@ -42,6 +42,10 @@ Since this plugin will target CloudNativePG CRDs, the `official-plugins/cert-man
 
 CNPG is deprecating its in-tree `barmanObjectStore` integration in favor of the Barman Cloud **plugin** (CNPG plugin interface + `ObjectStore` CR). Any backup/recovery work in this plugin (listing, creating, scheduling, or recovering from backups) should target that plugin-based integration, not the legacy in-tree `spec.backup.barmanObjectStore` / `bootstrap.recovery.backup.barmanObjectStore` fields.
 
+### Actions that modify cluster resources must be disabled for read-only users
+
+Any new UI action that mutates a resource (create, edit, delete, or a bespoke action like switchover) must check RBAC and disable itself — not just hide itself — when the user lacks the required verb, matching the existing pattern (e.g. `src/components/clusters/switchover.tsx`, `src/components/common/AuthDisabledButton.tsx`): wrap the action in `AuthVisible` (from `@kinvolk/headlamp-plugin/lib/CommonComponents`) with the relevant `authVerb`/`subresource`, use its `onAuthResult` callback to track an `allowed` boolean (defaulting to `true` until the check resolves, so the button fails open as a UX nicety — the API call itself is still enforced server-side by RBAC), and render the action `disabled` with an explanatory `Tooltip` when denied. Prefer wrapping with `AuthDisabledButton` for plain MUI buttons; for components that don't accept a bare `disabled` prop (e.g. `ActionButton`, which only takes `iconButtonProps.disabled`), wire the same `AuthVisible`/`allowed`/`Tooltip` pattern in directly as `switchover.tsx` does.
+
 ## SDK gotchas learned the hard way
 
 These cost real debugging time — check here before re-deriving them:
