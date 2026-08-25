@@ -13,6 +13,7 @@ List and detail views, plus a guided creation form.
 - Per-instance Postgres logs (filterable, color-coded, live-following)
 - A `psql` terminal against the primary or any replica
 - A manual **switchover** action to promote a chosen replica to primary
+- Leader-election **lease** details (holder, acquire/renew time, duration, transitions) alongside the cluster's main info
 - Creation form (with live YAML preview) covering instances/HA, storage and tablespaces, backup configuration, volume snapshots, and bootstrap — including bootstrapping a new cluster from an existing backup
 
 #### Poolers (PgBouncer)

@@ -304,4 +304,14 @@ export class Cluster extends KubeObject<CnpgCluster> {
   ): boolean {
     return this.imageCatalogRef?.kind === catalogKind && this.imageCatalogRef?.name === name;
   }
+
+  get primaryLabel(): string {
+    const currentPrimary = this.currentPrimary || '-';
+
+    if (this.isSwitchoverInProgress) {
+      return `${currentPrimary} (targeting ${this.targetPrimary})`;
+    }
+
+    return currentPrimary;
+  }
 }
