@@ -2,7 +2,6 @@ import { K8s, Router } from '@kinvolk/headlamp-plugin/lib';
 import {
   ActionButton,
   ConditionsTable,
-  DateLabel,
   DetailsGrid,
   NameValueTable,
   ResourceLink,
@@ -10,6 +9,8 @@ import {
   SimpleTable,
   StatusLabel,
 } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import { localeDate } from '@kinvolk/headlamp-plugin/lib/Utils';
+import Tooltip from '@mui/material/Tooltip';
 import { useHistory, useParams } from 'react-router-dom';
 import { Cluster } from '../../resources/cluster';
 import { FailoverQuorum } from '../../resources/failoverQuorum';
@@ -323,9 +324,48 @@ function FailoverQuorumSection({ cluster }: { cluster: Cluster }) {
   );
 }
 
+type Lease = InstanceType<typeof K8s.ResourceClasses.Lease>;
+
+// CNPG maintains exactly one Lease per Cluster, same name and namespace, used for leader election
+// among instances — so a missing Lease (e.g. right after cluster creation) is a transient,
+// ordinary state, not an error worth showing (renders as '-' rather than nothing).
+function leaseValue(lease: Lease | null) {
+  if (!lease) {
+    return '-';
+  }
+
+  // The API also sets spec.acquireTime, which the SDK's LeaseSpec type omits.
+  const spec = lease.spec as typeof lease.spec & { acquireTime?: string };
+
+  return (
+    <Tooltip
+      title={
+        <>
+          Acquired: {spec.acquireTime ? localeDate(spec.acquireTime) : '-'}
+          <br />
+          Duration: {spec.leaseDurationSeconds}s<br />
+          Transitions: {spec.leaseTransitions}
+        </>
+      }
+    >
+      <span>
+        {spec.holderIdentity
+          ? `${spec.holderIdentity} (renewed ${
+              spec.renewTime ? localeDate(spec.renewTime) : '-'
+            })`
+          : '-'}
+      </span>
+    </Tooltip>
+  );
+}
+
 export function ClusterDetail() {
   const { name, namespace } = useParams<{ name: string; namespace: string }>();
   const history = useHistory();
+  const selectedCluster = K8s.useCluster();
+  const [lease] = K8s.ResourceClasses.Lease.useGet(name, namespace, {
+    cluster: selectedCluster ?? undefined,
+  });
 
   return (
     <DetailsGrid
@@ -419,41 +459,27 @@ export function ClusterDetail() {
         item && [
           {
             name: 'Health',
-            value: <StatusLabel status={item.health}>{item.healthLabel}</StatusLabel>,
-          },
-          {
-            name: 'Phase',
-            value: item.phase,
-          },
-          {
-            name: 'Current Primary',
-            value: item.currentPrimary,
-          },
-          {
-            name: 'Target Primary',
-            value: item.targetPrimary,
-          },
-          {
-            name: 'Primary Since',
-            value: item.currentPrimaryTimestamp && (
-              <DateLabel date={item.currentPrimaryTimestamp} format="mini" />
+            value: (
+              <Tooltip title={item.phase ?? ''}>
+                <StatusLabel status={item.health}>{item.healthLabel}</StatusLabel>
+              </Tooltip>
             ),
+          },
+          {
+            name: 'Primary',
+            value: item.primaryLabel,
+          },
+          {
+            name: 'Lease',
+            value: leaseValue(lease),
           },
           {
             name: 'Instances',
             value: `${item.readyInstances} ready / ${item.instances} total`,
           },
           {
-            name: 'Timeline',
-            value: item.timelineID?.toString(),
-          },
-          {
             name: 'PostgreSQL Image',
             value: item.image,
-          },
-          {
-            name: 'System ID',
-            value: item.systemID,
           },
           {
             name: 'Synchronous Replication',
