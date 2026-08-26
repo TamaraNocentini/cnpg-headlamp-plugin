@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout plugin
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Checkout Headlamp
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: kubernetes-sigs/headlamp
           ref: ${{ inputs['headlamp-ref'] || 'main' }}
